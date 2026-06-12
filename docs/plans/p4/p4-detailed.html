@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P4 상세 계획서 — Submit Flow</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #d8d8d8;
+    --accent: #1f6feb;
+    --warn: #b97f00;
+    --danger: #b3261e;
+    --ok: #1e7f3a;
+    --code-bg: #f5f6f8;
+    --table-stripe: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  aside.toc {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border); padding: 24px 18px; background: #fbfbfb;
+  }
+  aside.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 10px; }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+  aside.toc ol li { margin: 4px 0; }
+  aside.toc ol li a { color: var(--fg); text-decoration: none; padding: 4px 6px; display: block; border-radius: 4px; }
+  aside.toc ol li a:hover { background: #eef2f7; color: var(--accent); }
+  aside.toc ol li ol { padding-left: 12px; margin-top: 2px; font-size: 12px; color: var(--muted); }
+  main { padding: 32px 40px 80px; max-width: 1100px; }
+  main h1 { font-size: 26px; margin: 0 0 6px; }
+  main .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+  main h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 6px; margin-top: 40px; }
+  main h3 { font-size: 16px; margin-top: 24px; }
+  main h4 { font-size: 14px; margin-top: 18px; color: var(--muted); }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.55; }
+  pre .kw { color: #b04bdb; } pre .str { color: #1e7f3a; } pre .com { color: #8a8a8a; font-style: italic; }
+  pre .num { color: #b97f00; } pre .typ { color: #1f6feb; } pre .fn { color: #b97f00; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  tbody tr:nth-child(odd) td { background: var(--table-stripe); }
+  .day-card { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 6px; padding: 18px 22px; margin: 18px 0; background: #fcfcfd; }
+  .day-card h3 { margin-top: 0; color: var(--accent); }
+  .day-card .meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .callout { border-radius: 6px; padding: 12px 16px; margin: 12px 0; border-left: 4px solid var(--accent); background: #eff5fd; }
+  .callout.info { border-left-color: var(--accent); background: #eff5fd; }
+  .callout.warn { border-left-color: var(--warn); background: #fdf6e7; }
+  .callout.danger { border-left-color: var(--danger); background: #fdecea; }
+  .callout.ok { border-left-color: var(--ok); background: #eaf6ee; }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .ascii { background: #1a1f29; color: #e6e6e6; padding: 18px 20px; border-radius: 6px; overflow-x: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #e9eef5; color: var(--fg); margin-right: 4px; }
+  .tag.warn { background: #fdf0d0; color: var(--warn); }
+  .tag.danger { background: #fbd9d6; color: var(--danger); }
+  .tag.ok { background: #d8eedf; color: var(--ok); }
+  ul.exit-criteria { list-style: none; padding-left: 0; }
+  ul.exit-criteria li { margin: 6px 0; padding-left: 22px; position: relative; }
+  ul.exit-criteria li input[type="checkbox"] { position: absolute; left: 0; top: 4px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    pre, table, .day-card, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#sec-overview">1. 개요</a></li>
+    <li><a href="#sec-dr">2. RALPLAN-DR 요약</a>
+      <ol>
+        <li><a href="#sec-dr-principles">2.1 Principles</a></li>
+        <li><a href="#sec-dr-drivers">2.2 Decision Drivers</a></li>
+        <li><a href="#sec-dr-options">2.3 Viable Options</a></li>
+        <li><a href="#sec-dr-rationale">2.4 선택 근거</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-days">3. Day-by-Day Work Package</a>
+      <ol>
+        <li><a href="#sec-day1">Day 1 — Prompt + Extractor + Config</a></li>
+        <li><a href="#sec-day2">Day 2 — Orchestrator</a></li>
+        <li><a href="#sec-day25">Day 2.5 — 통합 + 회귀</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-arch">4. Architecture Diagram</a></li>
+    <li><a href="#sec-code">5. Critical Code Specs</a>
+      <ol>
+        <li><a href="#sec-code-prompt">5.1 PromptBuilder</a></li>
+        <li><a href="#sec-code-config">5.2 ProviderConfig + Whitelist</a></li>
+        <li><a href="#sec-code-extractor">5.3 ResponseExtractor</a></li>
+        <li><a href="#sec-code-orch">5.4 LLMOrchestrator</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-adr">6. ADR 운영화</a></li>
+    <li><a href="#sec-cost">7. Cost Driver 이중 화이트리스트</a></li>
+    <li><a href="#sec-ac">8. Acceptance Criteria</a></li>
+    <li><a href="#sec-risks">9. Risks & Mitigations</a></li>
+    <li><a href="#sec-exit">10. Exit Gate to P5</a></li>
+    <li><a href="#sec-appendix">11. 부록</a>
+      <ol>
+        <li><a href="#sec-appendix-a">A. 환경 변수 / settings</a></li>
+        <li><a href="#sec-appendix-b">B. 참고문헌</a></li>
+      </ol>
+    </li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>P4 — 제출 흐름 (Submit Flow)</h1>
+<p class="subtitle">Phase 4 detailed plan · PromptBuilder + ProviderConfig + LLMOrchestrator + ResponseExtractor · 마스터 계획 <code>docs/plans/vscode-md-review-plan.md</code> 분해본 · 2026-05-15 작성</p>
+
+<!-- ============================== 1. 개요 ============================== -->
+<section id="sec-overview">
+  <h2>1. 개요</h2>
+
+  <p>본 phase는 P3 [제출] 버튼이 발화하는 <code>submit</code> 메시지를 실제 LLM 호출까지 연결한다. PromptBuilder가 envelope/sentinel을 포함한 단일 prompt를 조립하고, ProviderConfig가 두 가지 화이트리스트(args 토큰 + command basename)로 cost driver 위반을 차단하며, LLMOrchestrator가 NodePtySession + TerminationDetector + ResponseExtractor를 연결하여 응답 마크다운을 추출한다. P5 diff 적용 전 단계까지 완성한다.</p>
+
+  <table>
+    <tbody>
+      <tr><th style="width: 18%">Goal</th><td>envelope/sentinel 포맷 prompt 송신 → interactive CLI 응답 수신 → fenced markdown 추출까지 단일 흐름 완성. 화이트리스트 이중 검증으로 비용 driver 위반 차단. P3 [제출] 버튼이 LLMOrchestrator로 routing.</td></tr>
+      <tr><th>Side / Out</th><td>diff 표시(P5), hunk별 승인 UX, vsce 패키징(P6), platform-specific vsix.</td></tr>
+      <tr><th>Scope (in)</th><td>PromptBuilder, ProviderConfig zod 스키마, validateCommand + validateArgs, ResponseExtractor 강화(fenced markdown 우선), LLMOrchestrator(spawn → write → detect → extract), P3 wiring, P0.5 spike 활용 가능 (실제 CLI는 mock 우선).</td></tr>
+      <tr><th>Scope (out)</th><td>실제 LLM 통합 회귀(P0.5에서 별도 검증), 응답 후 diff 표시, hunk 승인 UI, 다중 호출 큐.</td></tr>
+      <tr><th>Key Deliverables</th><td>
+        <code>src/llm/PromptBuilder.ts</code><br>
+        <code>src/llm/ProviderConfig.ts</code><br>
+        <code>src/llm/ResponseExtractor.ts</code><br>
+        <code>src/llm/LLMOrchestrator.ts</code><br>
+        <code>src/llm/types.ts</code> (interfaces)<br>
+        <code>src/editor/MarkdownReviewEditor.ts</code> 갱신 (submit handler routing)<br>
+        <code>test/llm/PromptBuilder.test.ts</code><br>
+        <code>test/llm/ProviderConfig.test.ts</code><br>
+        <code>test/llm/validateCommand.test.ts</code><br>
+        <code>test/llm/validateArgs.test.ts</code><br>
+        <code>test/llm/ResponseExtractor.test.ts</code><br>
+        <code>test/llm/LLMOrchestrator.test.ts</code>
+      </td></tr>
+      <tr><th>Dependencies</th><td>P0/P1(PTY 코어 + DetectorFactory), P2(Comment 모델), P3(CommentSession.attachSubmitHandler hook). 새 외부 의존성 없음.</td></tr>
+      <tr><th>Effort</th><td>2.0 작업일 (Day 1 Prompt/Config/Extractor + Day 2 Orchestrator + Day 2.5 P3 wiring/회귀).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>비용 driver 핵심</strong>
+    본 phase의 가장 중요한 가드는 <strong>이중 화이트리스트</strong>이다. <code>args</code>에 <code>-p</code> 또는 화이트리스트 외 토큰이 들어가거나, <code>command</code> basename이 <code>claude</code>/<code>codex</code>/<code>gemini</code>가 아닌 경우(wrapper script 우회) 즉시 spawn 거부 + OutputChannel <code>[cost-guard]</code> 로그. AC-14가 본 phase의 가장 strict 검증 항목이다.
+  </div>
+</section>
+
+<!-- ============================== 2. RALPLAN-DR 요약 ============================== -->
+<section id="sec-dr">
+  <h2>2. RALPLAN-DR 요약</h2>
+
+  <section id="sec-dr-principles">
+    <h3>2.1 Principles (4)</h3>
+    <ol>
+      <li><strong>Single prompt envelope</strong> — host는 항상 <code>&lt;&lt;&lt;BEGIN-{uuid}&gt;&gt;&gt;</code> ~ <code>&lt;&lt;&lt;END-{uuid}&gt;&gt;&gt;</code> 사이에 prompt를 감싸 송신한다. uuid는 매 호출마다 재생성하여 R-15 (본문 우연 충돌) 1차 방어. TerminationDetector가 Stage A에서 PROMPT_END 후 buffer만 응답으로 처리.</li>
+      <li><strong>Deny-by-default 화이트리스트</strong> — args/command 모두 명시적으로 허용된 값만 통과. <code>-p</code>/<code>--print</code>은 cost-guard lint에서도 거부되지만, runtime spawn에서도 다시 거부 (defense in depth). 잘못된 settings에 대해 silent 동작 금지.</li>
+      <li><strong>Detector는 provider별 격리</strong> — DetectorStrategy 패턴(P1에서 도입)을 그대로 활용. claude/codex/gemini별 submit key 차이와 shell prompt 정규식 차이를 strategy 안에 캡슐화. orchestrator는 strategy를 통해 추상화된 인터페이스로만 의존.</li>
+      <li><strong>Response는 fenced 우선, 폴백은 trim</strong> — LLM이 <code>```markdown ... ```</code>로 감싸 출력하도록 prompt에서 요청. ResponseExtractor가 1순위로 fenced block을 잡고, 없으면 sentinel trim 영역을 그대로 반환. 모호한 휴리스틱 추가 금지.</li>
+    </ol>
+  </section>
+
+  <section id="sec-dr-drivers">
+    <h3>2.2 Decision Drivers (Top 3)</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Driver</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>D1</td><td>비용 driver 위반 차단 (R-7)</td><td><code>claude -p</code>는 종량 과금. 사용자가 settings 오설정으로도 절대 spawn 안 되어야 함. 이중 화이트리스트 + lint + runtime guard로 3중 방어.</td></tr>
+        <tr><td>D2</td><td>응답 종료 deterministic 결정</td><td>LLM이 sentinel을 누락해도 shell prompt 복귀(Stage B2) + 90s timeout(Stage B3)으로 반드시 종료. orchestrator는 settled 결과만 ResponseExtractor에 전달.</td></tr>
+        <tr><td>D3</td><td>provider 교체 비용 최소화</td><td>settings의 <code>defaultProvider</code> 변경만으로 host 측 코드 수정 없이 다른 provider 사용. DetectorStrategy + ProviderConfig가 provider별 차이를 흡수.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-options">
+    <h3>2.3 Viable Options (≥2 비교)</h3>
+    <table>
+      <thead>
+        <tr><th>옵션</th><th>설명</th><th>Pros</th><th>Cons</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A. envelope + sentinel + shell prompt 3단 detector <span class="tag ok">선택</span></td>
+          <td>P1에서 확립한 TerminationDetector 그대로 활용. PromptBuilder가 envelope/sentinel 토큰을 생성하고 orchestrator가 wiring.</td>
+          <td>P1 회귀 자산 reuse, deterministic 종료 보장, R-11/R-13/R-15/R-16 완화 이미 검증됨</td>
+          <td>prompt가 다소 verbose (envelope + sentinel 지시문)</td>
+        </tr>
+        <tr><td>B. sentinel만 단일 detector</td><td>envelope 없이 sentinel만 매칭.</td><td>prompt 단순</td><td>PTY echo back으로 false-resolve (R-11), 마스터 plan에서 이미 기각</td></tr>
+        <tr><td>C. WebSocket-based LLM API</td><td>OpenAI/Anthropic 직접 호출.</td><td>응답 종료 명확</td><td>본 프로젝트 핵심 동인(인터랙티브 모드 활용으로 과금 회피)과 정면 충돌</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-rationale">
+    <h3>2.4 선택 근거</h3>
+    <div class="callout info">
+      <strong>Primary: A (envelope + sentinel + shell prompt)</strong>
+      P1 PTY 코어가 이미 envelope-aware로 구현되어 있고 6가지 echo 케이스 회귀 테스트가 있다. 본 phase는 P1 자산을 PromptBuilder에서 envelope 토큰 생성 + LLMOrchestrator에서 detector wiring으로 활용하기만 하면 된다. B는 이미 마스터 plan에서 기각된 옵션 — silent bug 위험. C는 본 프로젝트 핵심 동인 위반이라 즉시 기각.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 3. Day-by-Day Work Package ============================== -->
+<section id="sec-days">
+  <h2>3. Day-by-Day Work Package</h2>
+
+  <section id="sec-day1" class="day-card">
+    <h3>Day 1 — PromptBuilder + ResponseExtractor + ProviderConfig</h3>
+    <p class="meta">예상 소요 1.0 작업일 · 산출물 4개 · 단위 테스트 5종 그룹</p>
+
+    <h4>목표</h4>
+    <p>비용 driver 가드와 prompt/응답 변환 로직을 모두 pure function/class로 구현하여 spawn 의존성 없이 단위 테스트로 검증한다. AC-5(envelope 포맷)와 AC-14(이중 화이트리스트)를 본 day에서 모두 통과시킨다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/llm/types.ts</code> — <code>BuiltPrompt</code>, <code>ProviderConfig</code> 등 공통 타입</li>
+      <li><code>src/llm/PromptBuilder.ts</code> — <code>build(document, comments, uuid?): BuiltPrompt</code></li>
+      <li><code>src/llm/ProviderConfig.ts</code> — zod <code>ProviderConfigSchema</code>, <code>ALLOWED_ARGS</code> map, <code>ALLOWED_COMMAND_BASENAMES</code> map, <code>validateCommand(provider, command, output?)</code>, <code>validateArgs(provider, args, output?)</code></li>
+      <li><code>src/llm/ResponseExtractor.ts</code> — <code>extract(raw): string</code> fenced ```markdown 우선 + fallback trim</li>
+      <li><code>test/llm/PromptBuilder.test.ts</code> — envelope BEGIN/END/DONE 각 정확히 1회, comment join, uuid 매 호출마다 다름</li>
+      <li><code>test/llm/ProviderConfig.test.ts</code> — zod 통과/실패</li>
+      <li><code>test/llm/validateCommand.test.ts</code> — <code>'claude'</code>/<code>'/usr/local/bin/claude'</code>/<code>'claude-wrapper'</code>/<code>'/path/to/billable-claude'</code> 4 케이스</li>
+      <li><code>test/llm/validateArgs.test.ts</code> — claude/codex/gemini별 <code>-p</code> + 빈 args + 임의 args 거부</li>
+      <li><code>test/llm/ResponseExtractor.test.ts</code> — fenced 우선, 폴백, 다중 fence 첫 번째만, 빈 입력</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>Day 1 끝 자동 테스트 그린 후 Day 2 진군. 별도 lane 리뷰는 Day 2.5에서 일괄.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>PromptBuilder 출력 형식</strong> (Edit-1 envelope 포맷):
+<pre>&lt;&lt;&lt;BEGIN-{uuid}&gt;&gt;&gt;
+다음 마크다운 본문을 코멘트에 따라 수정해 주십시오.
+응답은 ```markdown 으로 감싼 fenced block 하나로만 보내십시오.
+응답 마지막에 정확히 다음 한 줄을 출력하십시오: &lt;&lt;&lt;DONE-{uuid}&gt;&gt;&gt;
+
+--- 본문 ---
+{document text}
+
+--- 코멘트 ---
+[1] (suggestion) line {line}, col {col}: "{before}" → "{after}" : {note}
+[2] (question)   line {line}, col {col}: {note}
+...
+&lt;&lt;&lt;END-{uuid}&gt;&gt;&gt;</pre></li>
+      <li><strong>uuid 정책</strong>: <code>build</code>가 uuid를 argument로 받는다 (DI). 인자가 없으면 <code>randomUUID()</code>로 생성. 테스트에서는 명시 주입하여 결정성 확보.</li>
+      <li><strong>코멘트 join 규칙</strong>: suggestion 타입은 <code>before</code>/<code>after</code>가 둘 다 비어있으면 prompt에서 제외 (의미 없는 entry 송신 차단). question 타입은 <code>note</code>가 비어 있으면 제외. join 순서는 입력 array 순서 보존.</li>
+      <li><strong>ALLOWED_ARGS</strong>: 현재 phase에서는 세 provider 모두 빈 set. 즉 어떤 추가 args도 거부. 향후 P5/P6에서 필요 시 명시적으로 추가.</li>
+      <li><strong>ALLOWED_COMMAND_BASENAMES</strong>: <code>{ claude: 'claude', codex: 'codex', gemini: 'gemini' }</code>. <code>command</code> 값에 <code>/</code>가 포함되면 마지막 segment를 basename으로 비교.</li>
+      <li><strong>validateCommand 로그 형식</strong>: 성공 시에도 <code>[cost-guard] resolved-command=&lt;raw&gt; basename=&lt;basename&gt;</code> 1줄 로그. 실패 시 한국어 에러 throw + 별도 로그 라인.</li>
+      <li><strong>ResponseExtractor 정규식</strong>: <code>/```(?:markdown|md)?\n([\s\S]*?)\n```/</code>. 첫 매치만 사용. 매칭 실패 시 raw trim.</li>
+      <li><strong>ResponseExtractor 강화 (NEW)</strong>: thinking 블록(<code>&lt;thinking&gt; ... &lt;/thinking&gt;</code>)이 응답에 포함된 경우 fenced 추출이 우선이므로 자연스럽게 배제됨. 폴백 경로에서 thinking 태그 제거는 본 phase 범위 외 (모호한 휴리스틱 도입 금지 원칙).</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep PromptBuilder</code> exit 0 (5+ it: envelope 정확히 1회씩 / comment 포함 / 빈 코멘트 skip / uuid 매번 다름 / pure)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep ProviderConfig</code> exit 0 (4+ it: 유효 / regex 위반 / 알 수 없는 키 / 누락 필드)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep validateCommand</code> exit 0 (4 케이스 정확히 spec대로)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep validateArgs</code> exit 0 (4 케이스: claude/codex/gemini 각 1 + 빈 args 통과)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep ResponseExtractor</code> exit 0 (5+ it)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit 0</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit 0 (cost-guard 포함)</li>
+      <li><input type="checkbox" disabled> <code>! rg '[\x{4E00}-\x{9FFF}]' src/llm test/llm</code> exit 0</li>
+    </ul>
+  </section>
+
+  <section id="sec-day2" class="day-card">
+    <h3>Day 2 — LLMOrchestrator (NodePtySession + TerminationDetector + DetectorFactory 통합)</h3>
+    <p class="meta">예상 소요 0.7 작업일 · 산출물 1개 + 단위 테스트 1종 그룹 (4+ it)</p>
+
+    <h4>목표</h4>
+    <p>PromptBuilder/ProviderConfig/ResponseExtractor를 받아 spawn → write → detect → extract의 단일 흐름을 캡슐화한다. PTY/Detector 의존성은 인터페이스로 주입받아 단위 테스트에서 fake로 대체 가능하게 한다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/llm/LLMOrchestrator.ts</code> — <code>submit(document, comments): Promise&lt;{ markdown: string; raw: string }&gt;</code>
+        <ul>
+          <li>주입 의존성: <code>configReader</code>(VSCode settings 추상화), <code>sessionFactory</code>(NodePtySession factory), <code>detectorFactory</code>, <code>output</code>(OutputChannel-like).</li>
+          <li>흐름: <code>configReader → validateCommand → validateArgs → sessionFactory → strategy.shellPromptRegex → TerminationDetector → onData feed → resolve → ResponseExtractor.extract</code>.</li>
+          <li>에러 처리: validateCommand/Args throw → orchestrator가 한국어 에러 toast + log 후 rethrow. timeout → reject(Error) 그대로 전파.</li>
+        </ul>
+      </li>
+      <li><code>test/llm/LLMOrchestrator.test.ts</code> — fake session(=record write + emit chunks) + fake detector + fake config → 정상 흐름, 잘못된 command 거부, timeout 전파, fenced 추출 확인</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>Day 2 끝 자동 테스트 그린 후 Day 2.5 진군.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>의존성 주입 계층</strong>: 실제 NodePtySession은 native binding이므로 단위 테스트에서 직접 사용 불가. <code>LLMOrchestratorDeps</code> 인터페이스로 sessionFactory만 의존성 주입하여 fake로 대체.</li>
+      <li><strong>strategy 사용</strong>: <code>detectorFactory(providerName).shellPromptRegex</code>와 <code>.submitKey</code>를 가져와 TerminationDetector + write 시 endline 결정.</li>
+      <li><strong>cwd/env 정책</strong>: P1에서 확립한 spawnDefault가 <code>process.env</code>를 상속하여 <code>~/.claude</code> ambient state를 보존(R-14 완화). 본 phase는 그 정책을 그대로 사용.</li>
+      <li><strong>kill 보장</strong>: orchestrator가 try/finally로 session.kill을 호출. R-6(자식 leak) 완화. timeout/에러 어떤 경로로도 kill이 호출되어야 함.</li>
+      <li><strong>OutputChannel 로그 형식</strong>: <code>[mdReview] submit start provider={p} uuid={u}</code>, <code>[mdReview] submit done {ms}ms bytes={n}</code>, 실패 시 <code>[mdReview] submit FAIL: {reason}</code>.</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep LLMOrchestrator</code> exit 0 (4+ it: happy path / invalid command / invalid args / timeout 전파)</li>
+      <li><input type="checkbox" disabled> Happy path 테스트가 fake session.write의 호출 1회 + sentinel 포함 chunk 1회 + resolve 결과 ResponseExtractor 통과 모두 assert</li>
+      <li><input type="checkbox" disabled> finally 블록 검증: 에러 경로에서도 fake session.kill spy 호출 1회 assert</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> + <code>npm run lint</code> 모두 exit 0</li>
+    </ul>
+  </section>
+
+  <section id="sec-day25" class="day-card">
+    <h3>Day 2.5 — P3 [제출] 버튼 wiring + 종료 조건 검증</h3>
+    <p class="meta">예상 소요 0.3 작업일 · MarkdownReviewEditor 갱신 + 전체 회귀</p>
+
+    <h4>목표</h4>
+    <p>P3의 placeholder submit handler를 실제 LLMOrchestrator로 교체한다. 결과 markdown은 별도 OutputChannel/임시 가시화(P5에서 vscode.diff로 표시 예정)로 남기고, 본 phase에서는 [제출] 후 응답 markdown이 user-visible OutputChannel에 출력되는 것으로 합의(diff 적용은 P5).</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/editor/MarkdownReviewEditor.ts</code> 갱신 — <code>session.attachSubmitHandler(async (comments) =&gt; { const r = await orchestrator.submit(document, comments); output.appendLine(r.markdown); })</code></li>
+      <li><code>docs/plans/p4/p4-manual-smoke.md</code> — F5 수동 검증 (실제 LLM 호출 없이 fake provider 사용 또는 mock cli 사용 검증)</li>
+      <li>전체 회귀 — <code>npm test</code>, <code>npm run lint</code>, <code>npm run compile</code>, hanja grep, cost-guard grep</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> 전체 <code>npm test</code> exit 0 (P0+P1+P2+P3+P4 누적 100+ 통과)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> + <code>npm run compile:webview</code> + <code>npm run lint</code> 모두 exit 0</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증 <code>! rg '[\x{4E00}-\x{9FFF}]' src/ test/ media/webview/</code> exit 0</li>
+      <li><input type="checkbox" disabled> cost-guard 회귀 <code>grep -rE '"-p"|"--print"' src/</code> 0건</li>
+      <li><input type="checkbox" disabled> P3 submit handler가 더 이상 placeholder가 아니고 LLMOrchestrator를 호출함 (grep 검증)</li>
+      <li><input type="checkbox" disabled> code-reviewer agent 별도 lane으로 P4 일괄 리뷰 (CRITICAL/HIGH 0건)</li>
+    </ul>
+  </section>
+
+</section>
+
+<!-- ============================== 4. Architecture Diagram ============================== -->
+<section id="sec-arch">
+  <h2>4. Architecture Diagram</h2>
+
+  <div class="ascii">
+P4 Submit Flow — 모듈 의존도
+
+   +-------------------------------------------------------------+
+   |  P3 WebView [제출] 버튼                                     |
+   +--------------------------+----------------------------------+
+                              |
+                              v  (CommentSession.attachSubmitHandler 콜백)
+   +-------------------------------------------------------------+
+   |                       LLMOrchestrator                       |
+   |  submit(document, comments) → { markdown, raw }             |
+   +---+----------+-----------+-----------+----------+-----------+
+       |          |           |           |          |
+       v          v           v           v          v
+   +-------+ +---------+ +----------+ +--------+ +---------+
+   |Provid | |Prompt   | |Detector  | |NodePty | |Response |
+   |erConf | |Builder  | |Factory   | |Session | |Extractor|
+   |  zod  | |envelope | |strategy  | |spawn   | |fenced   |
+   |  args | |+sentinel| |          | |+kill   | |+trim    |
+   |  cmd  | |+comment | |          | |        | |         |
+   +-------+ +---------+ +----------+ +--------+ +---------+
+       (cost-guard 이중 화이트리스트)
+                              |
+                              v
+   +-------------------------------------------------------------+
+   |                  TerminationDetector (P1)                   |
+   |  Stage A: PROMPT_END  |  Stage B: sentinel + 200ms quiet    |
+   |  Stage B2: shell prompt |  Stage B3: 90s timeout            |
+   +-------------------------------------------------------------+
+
+   에러 경로:
+     validateCommand throws → orchestrator catches → 한국어 toast
+     validateArgs   throws → orchestrator catches → 한국어 toast
+     timeout reject       → orchestrator finally kill session
+                          → user에게 toast 안내
+  </div>
+</section>
+
+<!-- ============================== 5. Critical Code Specs ============================== -->
+<section id="sec-code">
+  <h2>5. Critical Code Specs</h2>
+
+  <section id="sec-code-prompt">
+    <h3>5.1 <code>src/llm/PromptBuilder.ts</code></h3>
+<pre><span class="kw">import</span> { randomUUID } <span class="kw">from</span> <span class="str">'crypto'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">Comment</span> } <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+
+<span class="kw">export interface</span> <span class="typ">BuiltPrompt</span> {
+  prompt: <span class="typ">string</span>;
+  envelopeBegin: <span class="typ">string</span>;
+  envelopeEnd: <span class="typ">string</span>;
+  sentinel: <span class="typ">string</span>;
+  uuid: <span class="typ">string</span>;
+}
+
+<span class="kw">export class</span> <span class="typ">PromptBuilder</span> {
+  <span class="fn">build</span>(documentText: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[], uuid?: <span class="typ">string</span>): <span class="typ">BuiltPrompt</span> {
+    <span class="kw">const</span> id = uuid ?? <span class="fn">randomUUID</span>();
+    <span class="kw">const</span> envelopeBegin = `&lt;&lt;&lt;BEGIN-${id}&gt;&gt;&gt;`;
+    <span class="kw">const</span> envelopeEnd = `&lt;&lt;&lt;END-${id}&gt;&gt;&gt;`;
+    <span class="kw">const</span> sentinel = `&lt;&lt;&lt;DONE-${id}&gt;&gt;&gt;`;
+    <span class="kw">const</span> joined = <span class="kw">this</span>.<span class="fn">joinComments</span>(comments);
+
+    <span class="kw">const</span> body = [
+      envelopeBegin,
+      <span class="str">'다음 마크다운 본문을 코멘트에 따라 수정해 주십시오.'</span>,
+      <span class="str">'응답은 ```markdown 으로 감싼 fenced block 하나로만 보내십시오.'</span>,
+      `응답 마지막에 정확히 다음 한 줄을 출력하십시오: ${sentinel}`,
+      <span class="str">''</span>,
+      <span class="str">'--- 본문 ---'</span>,
+      documentText,
+      <span class="str">''</span>,
+      <span class="str">'--- 코멘트 ---'</span>,
+      joined.length &gt; <span class="num">0</span> ? joined : <span class="str">'(코멘트 없음)'</span>,
+      envelopeEnd,
+    ].<span class="fn">join</span>(<span class="str">'\n'</span>);
+
+    <span class="kw">return</span> { prompt: body, envelopeBegin, envelopeEnd, sentinel, uuid: id };
+  }
+
+  <span class="kw">private</span> <span class="fn">joinComments</span>(comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">string</span> {
+    <span class="kw">const</span> lines: <span class="typ">string</span>[] = [];
+    <span class="kw">let</span> index = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="kw">const</span> c <span class="kw">of</span> comments) {
+      <span class="kw">if</span> (c.type === <span class="str">'suggestion'</span>) {
+        <span class="kw">const</span> before = c.before ?? <span class="str">''</span>;
+        <span class="kw">const</span> after = c.after ?? <span class="str">''</span>;
+        <span class="kw">if</span> (before.length === <span class="num">0</span> &amp;&amp; after.length === <span class="num">0</span>) <span class="kw">continue</span>;
+        lines.<span class="fn">push</span>(`[${index}] (suggestion) line ${c.anchor.line}, col ${c.anchor.col}: "${before}" → "${after}"${c.note ? ` : ${c.note}` : <span class="str">''</span>}`);
+      } <span class="kw">else</span> {
+        <span class="kw">const</span> note = (c.note ?? <span class="str">''</span>).<span class="fn">trim</span>();
+        <span class="kw">if</span> (note.length === <span class="num">0</span>) <span class="kw">continue</span>;
+        lines.<span class="fn">push</span>(`[${index}] (question) line ${c.anchor.line}, col ${c.anchor.col}: ${note}`);
+      }
+      index += <span class="num">1</span>;
+    }
+    <span class="kw">return</span> lines.<span class="fn">join</span>(<span class="str">'\n'</span>);
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-config">
+    <h3>5.2 <code>src/llm/ProviderConfig.ts</code></h3>
+<pre><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="kw">export const</span> ProviderNameSchema = z.<span class="fn">enum</span>([<span class="str">'claude'</span>, <span class="str">'codex'</span>, <span class="str">'gemini'</span>]);
+<span class="kw">export type</span> <span class="typ">ProviderName</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> ProviderNameSchema&gt;;
+
+<span class="kw">export const</span> ProviderConfigSchema = z.<span class="fn">object</span>({
+  command: z.<span class="fn">string</span>().<span class="fn">regex</span>(
+    /^(?:.*\/)?(?:claude|codex|gemini)$/,
+    <span class="str">'command basename must be exactly one of claude/codex/gemini'</span>,
+  ),
+  args: z.<span class="fn">array</span>(z.<span class="fn">string</span>()).<span class="fn">default</span>([]),
+  cwd: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  env: z.<span class="fn">record</span>(z.<span class="fn">string</span>()).<span class="fn">optional</span>(),
+});
+<span class="kw">export type</span> <span class="typ">ProviderConfig</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> ProviderConfigSchema&gt;;
+
+<span class="kw">export const</span> ALLOWED_ARGS: <span class="typ">Readonly</span>&lt;<span class="typ">Record</span>&lt;<span class="typ">ProviderName</span>, <span class="typ">ReadonlySet</span>&lt;<span class="typ">string</span>&gt;&gt;&gt; = {
+  claude: <span class="kw">new</span> <span class="typ">Set</span>(),
+  codex:  <span class="kw">new</span> <span class="typ">Set</span>(),
+  gemini: <span class="kw">new</span> <span class="typ">Set</span>(),
+};
+
+<span class="kw">export const</span> ALLOWED_COMMAND_BASENAMES: <span class="typ">Readonly</span>&lt;<span class="typ">Record</span>&lt;<span class="typ">ProviderName</span>, <span class="typ">string</span>&gt;&gt; = {
+  claude: <span class="str">'claude'</span>, codex: <span class="str">'codex'</span>, gemini: <span class="str">'gemini'</span>,
+};
+
+<span class="kw">export function</span> <span class="fn">commandBasename</span>(command: <span class="typ">string</span>): <span class="typ">string</span> {
+  <span class="kw">const</span> trimmed = command.<span class="fn">trim</span>();
+  <span class="kw">const</span> idx = trimmed.<span class="fn">lastIndexOf</span>(<span class="str">'/'</span>);
+  <span class="kw">return</span> idx &gt;= <span class="num">0</span> ? trimmed.<span class="fn">slice</span>(idx + <span class="num">1</span>) : trimmed;
+}
+
+<span class="kw">export interface</span> <span class="typ">CostGuardOutput</span> {
+  <span class="fn">appendLine</span>(line: <span class="typ">string</span>): <span class="typ">void</span>;
+}
+
+<span class="kw">export function</span> <span class="fn">validateCommand</span>(
+  provider: <span class="typ">ProviderName</span>,
+  command: <span class="typ">string</span>,
+  output?: <span class="typ">CostGuardOutput</span>,
+): <span class="typ">void</span> {
+  <span class="kw">const</span> basename = <span class="fn">commandBasename</span>(command);
+  <span class="kw">const</span> expected = ALLOWED_COMMAND_BASENAMES[provider];
+  output?.<span class="fn">appendLine</span>(`[cost-guard] resolved-command=${command} basename=${basename}`);
+  <span class="kw">if</span> (basename !== expected) {
+    <span class="kw">throw new</span> <span class="typ">Error</span>(
+      `[cost-guard] provider '${provider}'의 command basename은 '${expected}'만 허용됨. ` +
+      `현재: '${basename}'. wrapper script로 우회하는 것은 비용 driver 위반 위험이라 차단합니다.`,
+    );
+  }
+}
+
+<span class="kw">export function</span> <span class="fn">validateArgs</span>(
+  provider: <span class="typ">ProviderName</span>,
+  args: <span class="typ">readonly</span> <span class="typ">string</span>[],
+  output?: <span class="typ">CostGuardOutput</span>,
+): <span class="typ">void</span> {
+  <span class="kw">const</span> allowed = ALLOWED_ARGS[provider];
+  <span class="kw">const</span> violating = args.<span class="fn">filter</span>((a) =&gt; !allowed.<span class="fn">has</span>(a));
+  <span class="kw">if</span> (violating.length &gt; <span class="num">0</span>) {
+    output?.<span class="fn">appendLine</span>(
+      `[cost-guard] event=args-whitelist-violation provider=${provider} violating=${violating.<span class="fn">join</span>(<span class="str">','</span>)}`,
+    );
+    <span class="kw">throw new</span> <span class="typ">Error</span>(
+      `[cost-guard] provider '${provider}'에 허용되지 않은 args 발견: ${violating.<span class="fn">join</span>(<span class="str">', '</span>)}. ` +
+      `종량 과금 위험으로 spawn을 거부합니다.`,
+    );
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-extractor">
+    <h3>5.3 <code>src/llm/ResponseExtractor.ts</code></h3>
+<pre><span class="kw">export class</span> <span class="typ">ResponseExtractor</span> {
+  <span class="fn">extract</span>(raw: <span class="typ">string</span>): <span class="typ">string</span> {
+    <span class="com">// fenced markdown 우선. 첫 fence만 사용 — 다중 fence 휴리스틱 도입 금지.</span>
+    <span class="kw">const</span> match = raw.<span class="fn">match</span>(/```(?:markdown|md)?\n([\s\S]*?)\n```/);
+    <span class="kw">if</span> (match) <span class="kw">return</span> match[<span class="num">1</span>].<span class="fn">trim</span>();
+    <span class="kw">return</span> raw.<span class="fn">trim</span>();
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-orch">
+    <h3>5.4 <code>src/llm/LLMOrchestrator.ts</code></h3>
+<pre><span class="kw">import</span> { <span class="kw">type</span> <span class="typ">Comment</span> } <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+<span class="kw">import</span> { PromptBuilder, <span class="kw">type</span> <span class="typ">BuiltPrompt</span> } <span class="kw">from</span> <span class="str">'./PromptBuilder'</span>;
+<span class="kw">import</span> { ResponseExtractor } <span class="kw">from</span> <span class="str">'./ResponseExtractor'</span>;
+<span class="kw">import</span> {
+  validateCommand, validateArgs,
+  <span class="kw">type</span> <span class="typ">ProviderName</span>, <span class="kw">type</span> <span class="typ">CostGuardOutput</span>,
+} <span class="kw">from</span> <span class="str">'./ProviderConfig'</span>;
+<span class="kw">import</span> { TerminationDetector } <span class="kw">from</span> <span class="str">'../pty/TerminationDetector'</span>;
+<span class="kw">import</span> { DetectorFactory } <span class="kw">from</span> <span class="str">'../pty/detector/DetectorFactory'</span>;
+
+<span class="kw">export interface</span> <span class="typ">PtySessionLike</span> {
+  <span class="fn">write</span>(payload: <span class="typ">string</span>): <span class="typ">void</span>;
+  <span class="fn">onData</span>(handler: (chunk: <span class="typ">string</span>) =&gt; <span class="typ">void</span>): { <span class="fn">dispose</span>(): <span class="typ">void</span> };
+  <span class="fn">kill</span>(signal?: <span class="str">'SIGTERM'</span> | <span class="str">'SIGKILL'</span>, forceTimeoutMs?: <span class="typ">number</span>): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt;;
+}
+
+<span class="kw">export interface</span> <span class="typ">LLMOrchestratorDeps</span> {
+  <span class="fn">readConfig</span>(): { provider: <span class="typ">ProviderName</span>; command: <span class="typ">string</span>; args: <span class="typ">string</span>[]; sentinelTimeoutMs: <span class="typ">number</span> };
+  <span class="fn">spawn</span>(command: <span class="typ">string</span>, args: <span class="typ">string</span>[]): <span class="typ">PtySessionLike</span>;
+  output: <span class="typ">CostGuardOutput</span>;
+  promptBuilder?: <span class="typ">PromptBuilder</span>;
+  responseExtractor?: <span class="typ">ResponseExtractor</span>;
+}
+
+<span class="kw">export interface</span> <span class="typ">SubmitResult</span> {
+  markdown: <span class="typ">string</span>;
+  raw: <span class="typ">string</span>;
+  uuid: <span class="typ">string</span>;
+}
+
+<span class="kw">export class</span> <span class="typ">LLMOrchestrator</span> {
+  <span class="kw">private readonly</span> promptBuilder: <span class="typ">PromptBuilder</span>;
+  <span class="kw">private readonly</span> responseExtractor: <span class="typ">ResponseExtractor</span>;
+
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> deps: <span class="typ">LLMOrchestratorDeps</span>) {
+    <span class="kw">this</span>.promptBuilder = deps.promptBuilder ?? <span class="kw">new</span> <span class="fn">PromptBuilder</span>();
+    <span class="kw">this</span>.responseExtractor = deps.responseExtractor ?? <span class="kw">new</span> <span class="fn">ResponseExtractor</span>();
+  }
+
+  <span class="kw">async</span> <span class="fn">submit</span>(documentText: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">SubmitResult</span>&gt; {
+    <span class="kw">const</span> cfg = <span class="kw">this</span>.deps.<span class="fn">readConfig</span>();
+    <span class="fn">validateCommand</span>(cfg.provider, cfg.command, <span class="kw">this</span>.deps.output);
+    <span class="fn">validateArgs</span>(cfg.provider, cfg.args, <span class="kw">this</span>.deps.output);
+
+    <span class="kw">const</span> built: <span class="typ">BuiltPrompt</span> = <span class="kw">this</span>.promptBuilder.<span class="fn">build</span>(documentText, comments);
+    <span class="kw">const</span> strategy = DetectorFactory.<span class="fn">for</span>(cfg.provider);
+    <span class="kw">const</span> session = <span class="kw">this</span>.deps.<span class="fn">spawn</span>(cfg.command, cfg.args);
+
+    <span class="kw">try</span> {
+      <span class="kw">const</span> raw = <span class="kw">await new</span> <span class="typ">Promise</span>&lt;<span class="typ">string</span>&gt;((resolve, reject) =&gt; {
+        <span class="kw">const</span> detector = <span class="kw">new</span> <span class="fn">TerminationDetector</span>({
+          envelopeEnd: built.envelopeEnd,
+          sentinel: built.sentinel,
+          shellPromptRegex: strategy.shellPromptRegex,
+          hardTimeoutMs: cfg.sentinelTimeoutMs,
+        }, (body) =&gt; { resolve(body); }, (err) =&gt; { reject(err); });
+
+        <span class="kw">const</span> sub = session.<span class="fn">onData</span>((chunk) =&gt; detector.<span class="fn">feed</span>(chunk));
+        <span class="kw">const</span> tail = strategy.submitKey === <span class="str">'\r\n'</span> ? <span class="str">'\r\n'</span> : <span class="str">'\r'</span>;
+        session.<span class="fn">write</span>(built.prompt + tail);
+        <span class="com">// detector resolve/reject 시 settle 보장 — sub.dispose는 finally에서 처리.</span>
+        <span class="kw">void</span> sub;
+      });
+      <span class="kw">return</span> { markdown: <span class="kw">this</span>.responseExtractor.<span class="fn">extract</span>(raw), raw, uuid: built.uuid };
+    } <span class="kw">finally</span> {
+      <span class="kw">await</span> session.<span class="fn">kill</span>(<span class="str">'SIGTERM'</span>);
+    }
+  }
+}
+</pre>
+  </section>
+</section>
+
+<!-- ============================== 6. ADR 운영화 ============================== -->
+<section id="sec-adr">
+  <h2>6. ADR 운영화</h2>
+  <table>
+    <thead><tr><th>마스터 ADR</th><th>P4 적용</th></tr></thead>
+    <tbody>
+      <tr><td>AD-3: 모든 외부 입력은 zod로 검증</td><td>ProviderConfig는 settings 입력을 zod로 parse + 추가 화이트리스트 함수로 이중 검증.</td></tr>
+      <tr><td>AD-5: VSCode API는 의존성 주입 추상화</td><td>LLMOrchestrator는 <code>readConfig</code>/<code>spawn</code>/<code>output</code>을 deps로 주입받아 단위 테스트에서 fake 대체 가능.</td></tr>
+      <tr><td>AD-7 (NEW): cost driver 이중 화이트리스트 + lint</td><td>args 토큰 + command basename 이중 화이트리스트. cost-guard lint(P1)와 runtime validate 두 경로로 방어 (defense in depth).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 7. Cost Driver 이중 화이트리스트 ============================== -->
+<section id="sec-cost">
+  <h2>7. Cost Driver 이중 화이트리스트 (P4 특수 섹션)</h2>
+  <table>
+    <thead><tr><th>방어선</th><th>지점</th><th>차단 대상</th><th>방법</th></tr></thead>
+    <tbody>
+      <tr><td>1. 정적 lint</td><td><code>npm run lint:cost-guard</code></td><td>소스에 <code>"-p"</code>/<code>"--print"</code> 리터럴</td><td><code>grep -rE</code></td></tr>
+      <tr><td>2. zod schema</td><td>ProviderConfigSchema</td><td>command basename 위반 (claude/codex/gemini 외)</td><td>regex <code>/^(?:.*\/)?(?:claude|codex|gemini)$/</code></td></tr>
+      <tr><td>3. validateCommand</td><td>LLMOrchestrator.submit</td><td>provider별 expected basename 불일치 — wrapper script 우회</td><td>basename 추출 후 equality 비교</td></tr>
+      <tr><td>4. validateArgs</td><td>LLMOrchestrator.submit</td><td>화이트리스트 외 토큰 (<code>-p</code> 포함)</td><td>Set.has 비교</td></tr>
+    </tbody>
+  </table>
+  <div class="callout danger">
+    <strong>defense in depth</strong>
+    하나의 방어선이 우회되어도 다음 방어선이 차단한다. 예: 사용자가 settings에 직접 <code>command: '/usr/bin/billable-wrapper'</code>를 적었다 해도 (2) zod regex와 (3) validateCommand 둘 다 거부. <code>args: ['-p']</code>도 (2)에서는 통과 가능하지만 (4) validateArgs가 거부.
+  </div>
+</section>
+
+<!-- ============================== 8. Acceptance Criteria ============================== -->
+<section id="sec-ac">
+  <h2>8. Acceptance Criteria</h2>
+  <table>
+    <thead><tr><th>#</th><th>기준</th><th>검증 일자</th><th>검증 절차</th><th>통과</th></tr></thead>
+    <tbody>
+      <tr><td>P4-AC-1</td><td>PromptBuilder envelope 정확히 1회씩 포함</td><td>Day 1</td><td><code>npm test -- --grep "PromptBuilder envelope"</code>: <code>(prompt.match(/&lt;&lt;&lt;BEGIN-/g) ?? []).length === 1</code> + END/DONE도 동일</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-2</td><td>PromptBuilder uuid 매 호출 randomization</td><td>Day 1</td><td><code>const a = pb.build(doc, []); const b = pb.build(doc, []); expect(a.uuid).to.not.equal(b.uuid)</code></td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-3</td><td>PromptBuilder 빈 코멘트도 envelope 유지 + "(코멘트 없음)" 표시</td><td>Day 1</td><td>build(doc, []) → prompt 안 "(코멘트 없음)" 포함</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-4</td><td>validateCommand: claude no-throw / wrapper throw</td><td>Day 1</td><td>4 케이스 정확히 spec: <code>'claude'</code> + <code>'/usr/local/bin/claude'</code> no-throw / <code>'claude-wrapper'</code> + <code>'/path/to/billable-claude'</code> throws</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-5</td><td>validateArgs: 빈 args 통과 / <code>-p</code> 거부</td><td>Day 1</td><td>claude/codex/gemini 각각 <code>[]</code> 통과 + <code>['-p']</code>, <code>['--print']</code> 모두 throw</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-6</td><td>ProviderConfigSchema zod regex 위반 reject</td><td>Day 1</td><td><code>ProviderConfigSchema.safeParse({command: 'foo-wrapper', args: []}).success === false</code></td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-7</td><td>ResponseExtractor fenced 우선</td><td>Day 1</td><td><code>extractor.extract('```markdown\nx\n```')</code> === <code>'x'</code></td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-8</td><td>ResponseExtractor 폴백 trim</td><td>Day 1</td><td><code>extractor.extract('  raw\n')</code> === <code>'raw'</code></td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-9</td><td>LLMOrchestrator happy path</td><td>Day 2</td><td>fake session: <code>session.write</code> 1회 호출 + envelopeEnd 포함 chunk → sentinel chunk → resolve markdown == "x" (fenced 추출 결과)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-10</td><td>LLMOrchestrator invalid command rejection</td><td>Day 2</td><td>fake config.command = "claude-wrapper" → <code>submit()</code> throws + spawn 호출 0회 (fake spy)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-11</td><td>LLMOrchestrator finally kill 호출</td><td>Day 2</td><td>timeout reject 시에도 fake session.kill spy 1회 호출 assert</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-12 (마스터 AC-5)</td><td>제출 prompt가 본문+코멘트+envelope/sentinel 포함</td><td>Day 1</td><td>PromptBuilder 결과 안 본문 substring + 코멘트 substring + BEGIN/END/DONE 토큰 동시 포함 assert</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-13 (마스터 AC-12)</td><td>settings 변경 → reload 시 새 provider 동작</td><td>Day 2.5</td><td><code>npm test -- --grep ProviderConfig</code> zod parse + 수동: settings에 <code>defaultProvider: 'codex'</code> 변경 → reload → submit 시 codex.command spawn (mock 또는 수동 OutputChannel 확인)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P4-AC-14 (마스터 AC-14)</td><td>cost-guard 회귀 방지 — settings 주입으로도 차단</td><td>Day 2.5</td><td><code>grep -rE '"-p"|"--print"' src/</code> 0건 + validateArgs/validateCommand 단위 테스트 통과</td><td><input type="checkbox" disabled></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 9. Risks & Mitigations ============================== -->
+<section id="sec-risks">
+  <h2>9. Risks & Mitigations</h2>
+  <table>
+    <thead><tr><th>#</th><th>위험</th><th>가능성</th><th>영향</th><th>완화</th><th>책임</th></tr></thead>
+    <tbody>
+      <tr><td>P4-R-1 (마스터 R-2)</td><td>LLM이 sentinel 출력 지시 무시</td><td>낮음</td><td>중</td><td>PromptBuilder가 "정확히 다음 한 줄을 출력" 명시 + secondary detector(shell prompt) + tertiary timeout이 활성화되어 sentinel 누락에도 deterministic 종료. R-2가 P4 핵심 책임.</td><td>P4</td></tr>
+      <tr><td>P4-R-2 (마스터 R-4)</td><td>응답에 thinking 텍스트가 마크다운과 섞임</td><td>중</td><td>중</td><td>ResponseExtractor가 fenced ```markdown 블록 우선 추출. prompt에서 "fenced block 하나로만" 명시. 폴백 경로에서는 trim만 적용하고 별도 휴리스틱 도입 안 함.</td><td>P4</td></tr>
+      <tr><td>P4-R-3 (마스터 R-7 운영화)</td><td>사용자가 settings를 통해 cost driver 우회</td><td>낮음</td><td>매우 높음</td><td>이중 화이트리스트(args + command basename) + zod regex + cost-guard lint = 4중 방어. AC-14가 회귀 방지.</td><td>P4</td></tr>
+      <tr><td>P4-R-4 (마스터 R-6)</td><td>session.kill 누락으로 자식 leak</td><td>낮음</td><td>중</td><td>orchestrator.submit이 try/finally로 항상 kill. timeout/에러 어떤 경로로도 kill 호출. AC-11이 회귀 방지.</td><td>P4</td></tr>
+      <tr><td>P4-R-5</td><td>spawn 자체 실패 (executable not found, ENOENT)</td><td>낮음</td><td>중</td><td>NodePtySession이 spawn 단계 에러를 그대로 throw. orchestrator는 catch하여 한국어 토스트 + OutputChannel 로그. P0.5 spike에서 검증 (manual smoke).</td><td>P4</td></tr>
+      <tr><td>P4-R-6</td><td>writeOnSubmit이 너무 큰 prompt(예: 500KB 본문) 송신 시 PTY 버퍼 오버플로</td><td>중</td><td>중</td><td>본 phase는 본문 길이 가드 없이 그대로 송신. 임계치 초과 시 P5 이전에 chunk 단위 송신 또는 본문 발췌 검토. README에 본문 크기 제약 명시 예정.</td><td>P4+α</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 10. Exit Gate to P5 ============================== -->
+<section id="sec-exit">
+  <h2>10. Exit Gate to P5 (Diff Adoption)</h2>
+  <ul class="exit-criteria">
+    <li><input type="checkbox" disabled> <strong>소스 산출물 5개 존재</strong>: <code>src/llm/{PromptBuilder,ProviderConfig,ResponseExtractor,LLMOrchestrator,types}.ts</code> git tracked.</li>
+    <li><input type="checkbox" disabled> <strong>P3 wiring 완료</strong>: <code>MarkdownReviewEditor</code>의 submit handler가 LLMOrchestrator를 호출 (grep: <code>orchestrator.submit</code> 발견).</li>
+    <li><input type="checkbox" disabled> <strong>전체 <code>npm test</code> exit 0</strong>: 100+ it 통과 (P0+P1+P2+P3+P4 누적).</li>
+    <li><input type="checkbox" disabled> <strong>compile + lint + cost-guard</strong> 모두 exit 0.</li>
+    <li><input type="checkbox" disabled> <strong>한자 정적 검증</strong> <code>! rg '[\x{4E00}-\x{9FFF}]' src/ test/ media/webview/</code> exit 0.</li>
+    <li><input type="checkbox" disabled> <strong>P5 hand-off 계약</strong>: <code>SubmitResult.markdown</code> 형식이 P5의 diff input으로 즉시 활용 가능 (markdown 문자열 + 원본 본문 비교).</li>
+    <li><input type="checkbox" disabled> <strong>code-reviewer agent 별도 lane 리뷰 통과</strong>: P3 + P4 일괄, CRITICAL/HIGH 0건.</li>
+    <li><input type="checkbox" disabled> <strong>P0.5 spike 결과 검증</strong>: 실제 CLI에서 envelope/sentinel/shell prompt가 예상대로 동작 (수동, screenshot 또는 OutputChannel 로그).</li>
+  </ul>
+</section>
+
+<!-- ============================== 11. 부록 ============================== -->
+<section id="sec-appendix">
+  <h2>11. 부록</h2>
+  <section id="sec-appendix-a">
+    <h3>부록 A. 환경 변수 / settings</h3>
+    <table>
+      <thead><tr><th>키</th><th>타입</th><th>기본값</th><th>의미</th><th>도입</th></tr></thead>
+      <tbody>
+        <tr><td><code>mdReview.defaultProvider</code></td><td><code>'claude' | 'codex' | 'gemini'</code></td><td><code>'claude'</code></td><td>submit 시 사용할 provider</td><td>P0</td></tr>
+        <tr><td><code>mdReview.providers</code></td><td><code>{ [p]: { command, args, cwd?, env? } }</code></td><td><code>{}</code></td><td>provider별 spawn 설정. zod 검증 + 화이트리스트 통과 필수</td><td>P0/P4 강화</td></tr>
+        <tr><td><code>mdReview.sentinelTimeoutMs</code></td><td>number</td><td>90000</td><td>TerminationDetector hard timeout</td><td>P0</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section id="sec-appendix-b">
+    <h3>부록 B. 참고문헌</h3>
+    <ul>
+      <li>마스터 계획서: <code>docs/plans/vscode-md-review-plan.md</code> § P4</li>
+      <li>P1 PTY 코어 상세: <code>src/pty/TerminationDetector.ts</code> 주석</li>
+      <li>P2 상세 계획서: <code>docs/plans/p2/p2-detailed.html</code> (Comment 모델 reuse)</li>
+      <li>P3 상세 계획서: <code>docs/plans/p3/p3-detailed.html</code> (CommentSession.attachSubmitHandler hook)</li>
+      <li>Plan documents 규약: <code>~/.claude/rules/plan-documents.md</code></li>
+    </ul>
+  </section>
+</section>
+
+</main>
+</div>
+</body>
+</html>

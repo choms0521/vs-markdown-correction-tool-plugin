@@ -1,0 +1,112 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build-${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14,         target: darwin-arm64 }
+          - { os: macos-13,         target: darwin-x64 }
+          - { os: ubuntu-22.04,     target: linux-x64 }
+          - { os: ubuntu-22.04-arm, target: linux-arm64 }
+          - { os: windows-2022,     target: win32-x64 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile (host)
+        run: npm run compile
+
+      - name: Compile (webview)
+        run: npm run compile:webview
+
+      - name: Lint (eslint + cost-guard)
+        run: npm run lint
+
+      - name: Static check (hanja regression)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if perl -nle 'exit 1 if /\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md; then
+            echo "hanja check passed (0 hits)"
+          else
+            echo "hanja regression detected" >&2
+            exit 1
+          fi
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Pin node-pty prebuild to ${{ matrix.target }}
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREB="node_modules/node-pty/prebuilds"
+          if [ -d "$PREB" ]; then
+            for dir in "$PREB"/*; do
+              base=$(basename "$dir")
+              if [ "$base" != "${{ matrix.target }}" ]; then
+                echo "Removing non-matching prebuild: $base"
+                rm -rf "$dir"
+              fi
+            done
+            echo "Kept prebuilds:"
+            ls "$PREB" || echo "(no prebuilds dir — runner may build at install time)"
+          fi
+
+      - name: Pin node-pty prebuild (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $preb = "node_modules\node-pty\prebuilds"
+          if (Test-Path $preb) {
+            Get-ChildItem $preb | Where-Object { $_.Name -ne "${{ matrix.target }}" } | ForEach-Object {
+              Write-Host "Removing non-matching prebuild: $($_.Name)"
+              Remove-Item -Recurse -Force $_.FullName
+            }
+            Get-ChildItem $preb | ForEach-Object { Write-Host "Kept: $($_.Name)" }
+          }
+
+      - name: Package vsix (${{ matrix.target }})
+        run: npx vsce package --target ${{ matrix.target }}
+
+      - name: Verify vsix contains node-pty native binary
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VSIX=$(ls mdreview-*.vsix | head -1)
+          echo "Inspecting: $VSIX"
+          if unzip -l "$VSIX" | grep -E 'pty.*\.node' >/dev/null; then
+            echo "node-pty native binary present"
+          else
+            echo "node-pty native binary MISSING from vsix" >&2
+            exit 1
+          fi
+
+      - name: Upload vsix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mdreview-${{ matrix.target }}
+          path: '*.vsix'
+          if-no-files-found: error

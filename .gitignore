@@ -1,0 +1,15 @@
+node_modules/
+out/
+.vscode-test/
+*.vsix
+.DS_Store
+
+# Generated webview bundle (esbuild output)
+media/webview/dist/
+
+# Per-document review sidecars (user data)
+*.review.json
+
+# Local tool state
+.omc/
+.claude/

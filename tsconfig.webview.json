@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "media/webview",
+    "rootDir": "media/webview",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": false
+  },
+  "include": ["media/webview/**/*.ts"],
+  "exclude": ["node_modules"]
+}

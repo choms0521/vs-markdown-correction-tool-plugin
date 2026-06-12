@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P3 상세 계획서 — 마크다운 리뷰 WebView</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #d8d8d8;
+    --accent: #1f6feb;
+    --warn: #b97f00;
+    --danger: #b3261e;
+    --ok: #1e7f3a;
+    --code-bg: #f5f6f8;
+    --table-stripe: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    min-height: 100vh;
+  }
+  aside.toc {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    background: #fbfbfb;
+  }
+  aside.toc h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  aside.toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+  }
+  aside.toc ol li {
+    margin: 4px 0;
+  }
+  aside.toc ol li a {
+    color: var(--fg);
+    text-decoration: none;
+    padding: 4px 6px;
+    display: block;
+    border-radius: 4px;
+  }
+  aside.toc ol li a:hover {
+    background: #eef2f7;
+    color: var(--accent);
+  }
+  aside.toc ol li ol {
+    padding-left: 12px;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  main {
+    padding: 32px 40px 80px;
+    max-width: 1100px;
+  }
+  main h1 { font-size: 26px; margin: 0 0 6px; }
+  main .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+  main h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 6px; margin-top: 40px; }
+  main h3 { font-size: 16px; margin-top: 24px; }
+  main h4 { font-size: 14px; margin-top: 18px; color: var(--muted); }
+  p { margin: 8px 0; }
+  code {
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  pre .kw  { color: #b04bdb; }
+  pre .str { color: #1e7f3a; }
+  pre .com { color: #8a8a8a; font-style: italic; }
+  pre .num { color: #b97f00; }
+  pre .typ { color: #1f6feb; }
+  pre .fn  { color: #b97f00; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  tbody tr:nth-child(odd) td { background: var(--table-stripe); }
+  .day-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 18px 0;
+    background: #fcfcfd;
+  }
+  .day-card h3 { margin-top: 0; color: var(--accent); }
+  .day-card .meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .callout {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-left: 4px solid var(--accent);
+    background: #eff5fd;
+  }
+  .callout.info   { border-left-color: var(--accent); background: #eff5fd; }
+  .callout.warn   { border-left-color: var(--warn);   background: #fdf6e7; }
+  .callout.danger { border-left-color: var(--danger); background: #fdecea; }
+  .callout.ok     { border-left-color: var(--ok);     background: #eaf6ee; }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .ascii {
+    background: #1a1f29;
+    color: #e6e6e6;
+    padding: 18px 20px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e9eef5;
+    color: var(--fg);
+    margin-right: 4px;
+  }
+  .tag.warn   { background: #fdf0d0; color: var(--warn); }
+  .tag.danger { background: #fbd9d6; color: var(--danger); }
+  .tag.ok     { background: #d8eedf; color: var(--ok); }
+  ul.exit-criteria { list-style: none; padding-left: 0; }
+  ul.exit-criteria li { margin: 6px 0; padding-left: 22px; position: relative; }
+  ul.exit-criteria li input[type="checkbox"] { position: absolute; left: 0; top: 4px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    pre, table, .day-card, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#sec-overview">1. 개요</a></li>
+    <li><a href="#sec-dr">2. RALPLAN-DR 요약</a>
+      <ol>
+        <li><a href="#sec-dr-principles">2.1 Principles</a></li>
+        <li><a href="#sec-dr-drivers">2.2 Decision Drivers</a></li>
+        <li><a href="#sec-dr-options">2.3 Viable Options</a></li>
+        <li><a href="#sec-dr-rationale">2.4 선택 근거</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-days">3. Day-by-Day Work Package</a>
+      <ol>
+        <li><a href="#sec-day1">Day 1 — Editor + Bridge + AnchorResolver</a></li>
+        <li><a href="#sec-day2">Day 2 — WebView UI</a></li>
+        <li><a href="#sec-day25">Day 2.5 — 통합 + 회귀</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-arch">4. Architecture Diagram</a></li>
+    <li><a href="#sec-code">5. Critical Code Specs</a>
+      <ol>
+        <li><a href="#sec-code-editor">5.1 MarkdownReviewEditor</a></li>
+        <li><a href="#sec-code-bridge">5.2 WebViewBridge</a></li>
+        <li><a href="#sec-code-anchor">5.3 AnchorResolver</a></li>
+        <li><a href="#sec-code-webview">5.4 WebView main</a></li>
+        <li><a href="#sec-code-msg">5.5 Message Contract</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-adr">6. ADR 운영화</a></li>
+    <li><a href="#sec-csp">7. CSP + Payload Budget</a></li>
+    <li><a href="#sec-ac">8. Acceptance Criteria</a></li>
+    <li><a href="#sec-risks">9. Risks & Mitigations</a></li>
+    <li><a href="#sec-exit">10. Exit Gate to P4</a></li>
+    <li><a href="#sec-appendix">11. 부록</a>
+      <ol>
+        <li><a href="#sec-appendix-a">A. 환경 변수</a></li>
+        <li><a href="#sec-appendix-b">B. 참고문헌</a></li>
+      </ol>
+    </li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>P3 — 마크다운 리뷰 WebView (Review Editor UI)</h1>
+<p class="subtitle">Phase 3 detailed plan · CustomTextEditor + markdown-it + inline overlay + comment panel · 마스터 계획 <code>docs/plans/vscode-md-review-plan.md</code> 분해본 · 2026-05-15 작성</p>
+
+<!-- ============================== 1. 개요 ============================== -->
+<section id="sec-overview">
+  <h2>1. 개요</h2>
+
+  <p>본 phase는 사용자가 마크다운 본문을 시각적으로 보고, 임의 텍스트 구간을 선택하여 suggestion/question 코멘트를 인라인으로 부착할 수 있는 UI를 구현한다. P2 데이터 계층(<code>CommentStore</code>, <code>Comment</code>)을 화면에 binding하고, P4 제출 흐름에 필요한 [제출] 버튼 트리거 지점도 본 phase에서 마련한다.</p>
+
+  <table>
+    <tbody>
+      <tr><th style="width: 18%">Goal</th><td><code>CustomTextEditorProvider</code> 기반 마크다운 리뷰 에디터를 띄우고, <code>markdown-it</code> 렌더링 + 선택 구간 anchor 부착 + 사이드 panel 코멘트 목록 + [제출] 버튼 UI를 구현한다. P2 영속화와 round-trip 통합 회귀를 통과한다.</td></tr>
+      <tr><th>Side / Out</th><td>실제 LLM 호출(P4), diff 적용(P5)은 본 phase 범위 외. [제출] 버튼은 placeholder 메시지만 발화하고 P4가 hook한다.</td></tr>
+      <tr><th>Scope (in)</th><td>CustomTextEditor 등록, WebView HTML/CSS/JS, markdown-it 렌더, anchor 선택→저장, 패널 목록 렌더링, anchor 클릭→하이라이트, P2 CommentStore wiring, postMessage contract, CSP, AnchorResolver 단위 테스트.</td></tr>
+      <tr><th>Scope (out)</th><td>LLM 호출, PromptBuilder, diff editor, sentinel 처리, 코멘트 검색/필터/정렬 UX 고도화, 다중 문서 동시 리뷰.</td></tr>
+      <tr><th>Key Deliverables</th><td>
+        <code>src/editor/MarkdownReviewEditor.ts</code><br>
+        <code>src/editor/WebViewBridge.ts</code><br>
+        <code>src/editor/AnchorResolver.ts</code><br>
+        <code>src/editor/messages.ts</code> (zod 메시지 계약)<br>
+        <code>media/webview/index.html</code><br>
+        <code>media/webview/main.ts</code><br>
+        <code>media/webview/inline-overlay.ts</code><br>
+        <code>media/webview/comment-panel.ts</code><br>
+        <code>media/webview/style.css</code><br>
+        <code>test/editor/AnchorResolver.test.ts</code><br>
+        <code>test/editor/messages.test.ts</code><br>
+        <code>test/editor/WebViewBridge.test.ts</code>
+      </td></tr>
+      <tr><th>Dependencies</th><td>P0(scaffolding), P1(PTY 코어), P2(CommentStore + Comment + PersistenceBackend). markdown-it 신규 의존성 추가 필요. WebView 측 빌드 산출물(<code>media/webview/main.js</code>)을 위한 별도 컴파일 단계 추가 (tsc로 <code>media/webview/*.ts</code> → <code>media/webview/*.js</code>).</td></tr>
+      <tr><th>Effort</th><td>2.5 작업일 (Day 1 Editor/Bridge/Anchor / Day 2 WebView UI / Day 2.5 통합 + 회귀 + 수동 검증 절차)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>본 phase의 위치</strong>
+    P3는 사용자가 처음으로 시각적으로 산출물을 인지하는 단계이다. 따라서 본 phase는 <strong>F5 디버그 + 스크린샷</strong> 형식의 수동 검증이 필수이며, 자동 테스트는 AnchorResolver(line/col 계산), 메시지 contract(zod schema), WebViewBridge(postMessage adapter) 같은 분리 가능 단위만 대상으로 한다.
+  </div>
+</section>
+
+<!-- ============================== 2. RALPLAN-DR 요약 ============================== -->
+<section id="sec-dr">
+  <h2>2. RALPLAN-DR 요약</h2>
+
+  <section id="sec-dr-principles">
+    <h3>2.1 Principles (4)</h3>
+    <ol>
+      <li><strong>Single source of truth는 Extension Host</strong> — 마크다운 본문과 코멘트 권위 사본은 Extension Host에 둔다. WebView는 렌더링 view일 뿐이며, anchor 정보와 partial 코멘트 payload만 받는다. 본문 전체는 절대 WebView로 직렬화 송신하지 않는다 (R-5 완화 핵심).</li>
+      <li><strong>Message는 zod로 양쪽 검증</strong> — Extension Host → WebView, WebView → Extension Host 양방향 메시지를 zod schema로 사전 정의하고 송수신 양단에서 parse한다. 잘못된 메시지는 silently drop하지 않고 OutputChannel에 로그 + drop.</li>
+      <li><strong>WebView는 minimal vanilla TS</strong> — Lit/Preact 같은 프레임워크 도입은 P3 phase 범위 외. 인라인 오버레이와 패널은 plain DOM API + 작은 클래스로 충분히 표현 가능. 부피와 빌드 복잡성을 낮추어 검토와 디버깅 용이성을 유지.</li>
+      <li><strong>F5 manual smoke이 회귀 방지의 1차 방어선</strong> — UI는 자동화하기 어려우므로 매 phase 종료 시 5분짜리 F5 수동 체크리스트를 표준화하여 회귀 발생 시 즉시 발견한다.</li>
+    </ol>
+  </section>
+
+  <section id="sec-dr-drivers">
+    <h3>2.2 Decision Drivers (Top 3)</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Driver</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>D1</td><td>대용량 마크다운 안전성 (R-5)</td><td>500KB+ 문서에서 본문 전체 직렬화는 응답 지연·메모리 폭주 위험. 본문은 Extension Host가 file system + <code>vscode.TextDocument</code>로만 유지하고, WebView에는 렌더링된 HTML 조각(또는 anchor 좌표 + 보조 발췌)만 전달.</td></tr>
+        <tr><td>D2</td><td>Anchor 좌표계 일관성</td><td>WebView가 보는 DOM의 selection과 Extension Host가 보는 line/col이 일치해야 한다. AnchorResolver는 두 좌표계의 brokering 책임을 단일 모듈에 집중하여 회귀를 좁은 범위에 가둔다.</td></tr>
+        <tr><td>D3</td><td>P4 [제출] 버튼 흐름 hook 지점</td><td>본 phase는 [제출] 버튼 클릭 시 <code>submit</code> 메시지를 Extension Host로 발화하기만 한다. 실제 LLM 호출은 P4가 수신측에서 구현. 본 phase에서 hook 지점이 안정화되어 있어야 P4가 추가 변경 없이 plugin-in 가능.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-options">
+    <h3>2.3 Viable Options (≥2 비교)</h3>
+    <table>
+      <thead>
+        <tr><th>옵션</th><th>설명</th><th>Pros</th><th>Cons</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A. CustomTextEditor + WebView <span class="tag ok">선택</span></td>
+          <td><code>CustomTextEditorProvider</code>로 <code>.md</code> 파일을 직접 열고 WebView로 렌더.</td>
+          <td>VSCode native 통합, 파일 열기 UX 자연스러움, 본문은 <code>TextDocument</code>로 동기화 자동, 우클릭 "Open with" 컨텍스트 메뉴 자동</td>
+          <td>WebView CSP 제약, postMessage 메시지 송신/수신 boilerplate, 본문 직렬화 시 R-5 위험</td>
+        </tr>
+        <tr>
+          <td>B. WebviewView in Side Panel + 보조 에디터</td>
+          <td>사이드바 WebView를 띄우고 본문은 별도 <code>vscode.window.activeTextEditor</code>로 본다.</td>
+          <td>본문은 VSCode 내장 마크다운 미리보기 기능 reuse 가능</td>
+          <td>UX 분산 (본문/패널 분리), selection ↔ anchor 매핑 어려움, "Open with" 컨텍스트 메뉴에 등록 불가</td>
+        </tr>
+        <tr>
+          <td>C. External Browser + WebSocket</td>
+          <td>VSCode에서 localhost 브라우저를 열어 외부에서 렌더.</td>
+          <td>임의 프레임워크 사용 자유</td>
+          <td>VSCode integration zero, 사용자 onboarding 부담, 보안 surface 추가, phase 범위 초과</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-rationale">
+    <h3>2.4 선택 근거</h3>
+    <div class="callout info">
+      <strong>Primary: A (CustomTextEditor + WebView)</strong>
+      VSCode native 통합과 우클릭 "Open with Markdown Review" 자연스러움이 결정적이다. R-5 위험은 본문을 WebView에 직렬화하지 않고 markdown-it으로 Extension Host 측에서 렌더한 HTML 조각만 송신하는 구조로 완화한다 (또는 추후 작은 chunk 단위 lazy load 검토). B는 selection ↔ anchor 매핑 어려움으로 기각. C는 phase 범위 초과로 기각.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 3. Day-by-Day Work Package ============================== -->
+<section id="sec-days">
+  <h2>3. Day-by-Day Work Package</h2>
+
+  <section id="sec-day1" class="day-card">
+    <h3>Day 1 — MarkdownReviewEditor + WebViewBridge + AnchorResolver</h3>
+    <p class="meta">예상 소요 1.0 작업일 · 산출물 5개 · 단위 테스트 3종 그룹</p>
+
+    <h4>목표</h4>
+    <p>Extension Host 측 골조를 완성한다. <code>CustomTextEditorProvider</code>를 등록하여 <code>.md</code> 파일을 "Open with Markdown Review"로 열 수 있게 하고, WebViewBridge로 postMessage 양방향 래퍼를 마련하며, AnchorResolver의 line/col 계산을 단위 테스트로 검증한다. 이 day의 산출물만으로도 <code>F5 → .md 우클릭 → Open with → WebView 패널 열림</code>까지 동작해야 한다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/editor/MarkdownReviewEditor.ts</code> — <code>CustomTextEditorProvider</code> 구현, WebView HTML 셸 주입 (markdown-it 렌더 결과 + nonce + CSP), <code>onDidChangeTextDocument</code> hook으로 본문 변경 시 WebView re-render</li>
+      <li><code>src/editor/WebViewBridge.ts</code> — <code>postMessage(typedMessage)</code> + <code>onDidReceiveMessage(handler)</code> 래퍼. 양단 zod parse 적용 + 실패 시 OutputChannel 로그 후 drop</li>
+      <li><code>src/editor/AnchorResolver.ts</code> — <code>resolveAnchorFromDom(dom selection info)</code>: WebView가 보낸 DOM 좌표(<code>nodePath + offset</code>)를 본문 line/col/length로 변환. 역변환 <code>resolveDomFromAnchor(comment)</code>도 제공</li>
+      <li><code>src/editor/messages.ts</code> — <code>HostToWebViewMessage</code>, <code>WebViewToHostMessage</code> discriminated union을 zod로 정의</li>
+      <li><code>src/extension.ts</code> 갱신 — <code>vscode.window.registerCustomEditorProvider(MarkdownReviewEditor.viewType, new MarkdownReviewEditor(...))</code> 등록 + activation event 추가</li>
+      <li><code>test/editor/AnchorResolver.test.ts</code> — line/col 계산 단위 테스트 (BOM, CRLF, 서로게이트 쌍 케이스)</li>
+      <li><code>test/editor/messages.test.ts</code> — discriminated union zod parse 통과/실패 케이스</li>
+      <li><code>test/editor/WebViewBridge.test.ts</code> — fake webview 객체 주입 + 메시지 parse → handler 호출 검증</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>Day 1 끝에 자동 테스트 그린 확인 후 다음 day로 진군. 본 day 단독 code-reviewer 위임은 생략하고 Day 2.5 끝에 P3 전체 일괄 리뷰.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>CustomTextEditor activation</strong>: <code>package.json</code>의 <code>contributes.customEditors</code>에 <code>{ viewType: 'mdReview.editor', displayName: 'Markdown Review', selector: [{ filenamePattern: '*.md' }] }</code> 추가. priority는 <code>option</code>으로 두어 우클릭 "Open with"에서 명시적 선택 가능.</li>
+      <li><strong>WebView HTML 셸</strong>: <code>asWebviewUri</code>로 <code>media/webview/main.js</code>, <code>style.css</code> 경로 변환. nonce는 매 open마다 <code>randomUUID()</code>로 재생성. CSP는 § 7 참조.</li>
+      <li><strong>markdown-it 렌더 위치</strong>: Extension Host에서 본문을 markdown-it으로 렌더한 HTML 문자열을 WebView에 전달. 이유는 (a) markdown-it 의존성을 WebView에 번들링하지 않아 payload 절감, (b) 본문 변경 diff 계산 등 후속 기능에서 host 측 단일 사본이 유리.</li>
+      <li><strong>onDidChangeTextDocument 디바운스</strong>: 사용자가 외부 에디터로 본문을 편집할 수도 있으므로 변경 이벤트를 100ms 디바운스 후 WebView로 <code>renderUpdate</code> 메시지 송신.</li>
+      <li><strong>AnchorResolver 좌표계</strong>: WebView는 DOM 노드의 <code>data-line</code> 속성(markdown-it 토큰별로 주입)으로 line을 식별. col은 노드 내 텍스트 offset. length는 selection range 길이. AnchorResolver는 이 4-tuple을 <code>{line, col, length}</code>로 정규화.</li>
+      <li><strong>BOM/CRLF 정규화</strong>: VSCode <code>TextDocument</code>는 eol 설정을 가지며, line/col은 VSCode가 정규화한 값을 사용. AnchorResolver는 raw 문자열을 다루지 않고 <code>TextDocument.positionAt</code>/<code>offsetAt</code>을 우선 사용 (정규화 책임 VSCode에 위임).</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep AnchorResolver</code> exit code 0 (6개 이상 it 블록 — basic, multibyte, CRLF, surrogate, out-of-range, round-trip)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep messages</code> exit code 0 (4개 이상 it 블록 — valid host/webview 메시지 parse 성공, type 누락 reject, 알 수 없는 type reject)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep WebViewBridge</code> exit code 0 (3개 이상 it 블록 — fake webview로 송수신 + parse 실패 drop)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: <code>.md</code> 우클릭 → "Open with..." → "Markdown Review" 항목 보임 (screenshot)</li>
+      <li><input type="checkbox" disabled> <code>contributes.customEditors</code> entry가 <code>package.json</code>에 존재 (grep)</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증 <code>! rg '[\x{4E00}-\x{9FFF}]' src/editor test/editor</code> 0건</li>
+    </ul>
+  </section>
+
+  <section id="sec-day2" class="day-card">
+    <h3>Day 2 — WebView UI (markdown-it 렌더 + 인라인 오버레이 + 코멘트 패널)</h3>
+    <p class="meta">예상 소요 1.0 작업일 · 산출물 5개 · 단위 테스트 1종 그룹 (CSP/payload guard)</p>
+
+    <h4>목표</h4>
+    <p>WebView 내부 vanilla TS 코드를 작성한다. Extension Host가 전달한 markdown-it HTML을 본문 div에 렌더하고, 사용자 selection을 캡처하여 인라인 오버레이(컨텍스트 버튼)를 띄우고, suggestion/question 추가 시 사이드 panel에 항목을 추가한다. 패널 항목 클릭 시 본문 anchor에 스크롤 + 하이라이트 한다. [제출] 버튼은 <code>submit</code> 메시지를 host로 발화하고 placeholder toast가 응답한다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>media/webview/index.html</code> — 단일 HTML 셸. <code>&lt;main id="doc-body"&gt;</code> + <code>&lt;aside id="panel"&gt;</code> + <code>&lt;div id="overlay-root"&gt;</code>. CSP meta 태그 (nonce 주입은 host가 처리).</li>
+      <li><code>media/webview/main.ts</code> — entry point. <code>acquireVsCodeApi()</code> + 메시지 핸들러 + DOM bootstrap.</li>
+      <li><code>media/webview/inline-overlay.ts</code> — selection 변화 감지(<code>selectionchange</code>) + 떠다니는 컨텍스트 버튼(suggestion/question 추가) DOM 관리.</li>
+      <li><code>media/webview/comment-panel.ts</code> — 사이드 panel 렌더, 항목 클릭 핸들러(본문 anchor 스크롤 + class 부착), [제출] 버튼.</li>
+      <li><code>media/webview/style.css</code> — minimal CSS. VSCode 테마 변수(<code>--vscode-foreground</code>) 사용하여 light/dark 자동 대응.</li>
+      <li><code>tsconfig.webview.json</code> — WebView TS 빌드 설정 (target ES2020, lib DOM, outDir <code>media/webview/</code>).</li>
+      <li><code>test/editor/payload-budget.test.ts</code> — message payload size 가드 (단일 코멘트 추가 시 <code>JSON.stringify(payload).length &lt; 2048</code> assert).</li>
+      <li><code>package.json</code> scripts 추가 — <code>compile:webview</code>, <code>watch:webview</code>, <code>compile:all</code>.</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>WebView 코드는 DOM 위주이므로 자동 테스트 어려움. designer agent 별도 lane으로 인라인 오버레이 UX 검토 위임 (보조). 본 day 끝에 F5 smoke로 시각 확인.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>markdown-it data-line</strong>: host에서 markdown-it 인스턴스를 만들 때 <code>{html: false, linkify: true}</code>로 안전 모드. <code>renderer.rules.paragraph_open</code> 등에서 <code>data-line</code> 속성을 token의 <code>map[0]</code>으로 주입하여 WebView가 anchor 계산에 사용할 수 있게 한다.</li>
+      <li><strong>Selection 캡처</strong>: <code>document.addEventListener('selectionchange', ...)</code>로 selection 변화 감지. selection 끝나는 시점에 컨텍스트 버튼을 캐럿 근처에 띄움. 빈 selection이면 버튼 숨김. selection 위치 변화로 인한 thrashing 방지 위해 50ms 디바운스.</li>
+      <li><strong>Anchor 부착</strong>: 사용자가 컨텍스트 버튼을 누르면 WebView가 selection의 (startContainer dataLine, startOffset, length, type)을 host로 송신. host는 AnchorResolver로 정규화 후 CommentStore.add 호출. 새 코멘트 id가 echo로 돌아오면 panel 갱신.</li>
+      <li><strong>Panel 클릭 → highlight</strong>: panel 항목 click 시 host가 아니라 WebView 자체에서 처리 (round-trip 절약). <code>data-comment-id</code> attr로 DOM 노드 찾아 <code>scrollIntoView({block: 'center'})</code> + <code>classList.add('is-highlighted')</code>. 1.5s 후 highlight 자동 제거.</li>
+      <li><strong>VSCode 테마</strong>: CSS 변수 <code>--vscode-editor-background</code>, <code>--vscode-foreground</code>, <code>--vscode-focusBorder</code> 사용. suggestion/question 색상은 <code>--vscode-charts-blue</code>, <code>--vscode-charts-orange</code> 변수 활용.</li>
+      <li><strong>[제출] 버튼</strong>: panel 하단 고정. 클릭 시 <code>{type: 'submit'}</code> 메시지만 송신. host는 P3 단계에서 <code>vscode.window.showInformationMessage('제출이 P4 phase에서 활성화됩니다 (placeholder)')</code> placeholder 응답. P4가 이 hook을 LLMOrchestrator로 교체.</li>
+      <li><strong>Payload size guard</strong>: WebView → host 메시지 직렬화 후 길이를 <code>postMessage</code> 직전 측정. 2KB 초과 시 OutputChannel 경고 + 송신 거부(현재는 본문이 host에 있어 2KB 도달 거의 불가하지만 회귀 방지).</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm run compile:webview</code> exit code 0 (별도 tsconfig)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit code 0 (host 측)</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit code 0 — eslint가 <code>media/webview/*.ts</code>도 포함</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep payload-budget</code> exit code 0 (단일 코멘트 추가 payload &lt; 2048)</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: <code>.md</code> 열기 → 본문이 포맷되어 보임(markdown-it 렌더 확인) — screenshot</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: 임의 텍스트 선택 → 인라인 오버레이 버튼(suggestion/question) 노출 — screenshot</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: suggestion 추가 → 사이드 panel에 항목 1개 추가 — screenshot</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: panel 항목 클릭 → 본문 anchor에 스크롤 + 1.5s highlight — screenshot</li>
+      <li><input type="checkbox" disabled> <strong>F5 smoke</strong>: [제출] 버튼 클릭 → placeholder 안내 toast — screenshot</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증 <code>! rg '[\x{4E00}-\x{9FFF}]' media/webview src/editor test/editor</code> 0건</li>
+      <li><input type="checkbox" disabled> CSP 위반 0건 — DevTools Console에 <code>Refused to load</code>, <code>Content Security Policy</code> 에러 없음 (F5 + DevTools 열어 확인)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day25" class="day-card">
+    <h3>Day 2.5 — 통합 + P2 영속 회귀 + 종료 조건 검증</h3>
+    <p class="meta">예상 소요 0.5 작업일 · 통합 wiring + 회귀 테스트 + code-reviewer 위임</p>
+
+    <h4>목표</h4>
+    <p>Day 1/Day 2 산출물을 <code>CommentStore</code>와 연결한다. 코멘트 추가/삭제/수정이 사이드카 또는 workspaceState backend로 영속되고, WebView를 닫았다 다시 열어도 코멘트가 복원되는지 수동 회귀로 확인한다. code-reviewer agent 별도 lane spawn하여 P3 전체 일괄 검토.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/editor/MarkdownReviewEditor.ts</code> 갱신 — <code>resolveCustomTextEditor</code>에서 <code>PersistenceBackendFactory</code>로 backend 생성 후 <code>CommentStore</code> 인스턴스 attach. WebView 메시지 핸들러에서 add/update/remove 시 <code>store.save</code> 호출.</li>
+      <li><code>src/editor/CommentSession.ts</code> (NEW) — 단일 문서에 대한 코멘트 작업 세션. 현재 코멘트 array를 메모리에 보관하고, WebView 메시지 → CRUD → save → host echo의 흐름을 응집화. dispose 시 pending save flush.</li>
+      <li><code>test/editor/CommentSession.test.ts</code> — fake backend + fake bridge로 add → save → load 통합 테스트.</li>
+      <li><code>docs/plans/p3/p3-manual-smoke.md</code> — F5 수동 검증 체크리스트 (Day 2의 6개 smoke 단계 + 영속 회귀 단계 1개).</li>
+      <li><code>README.md</code> 또는 <code>docs/USAGE.md</code> — 영속 backend 선택 방법(<code>mdReview.persistenceBackend</code>) 사용 가이드 추가.</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p><code>code-reviewer</code> agent 별도 lane spawn. P2 + P3 전체를 일괄 리뷰. CRITICAL/HIGH 발견 시 본 phase 안에서 수정 후 종료 조건 재검증.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>CommentSession 책임 경계</strong>: WebView 메시지 핸들링(parse/echo)은 <code>WebViewBridge</code>가 담당. CommentStore 호출 및 결과 echo는 <code>CommentSession</code>이 담당. 분리 이유는 단위 테스트에서 store만 mock하면 메시지 흐름 검증 가능하기 때문.</li>
+      <li><strong>Pending save dedup</strong>: WebView에서 빠르게 여러 코멘트를 추가하면 save 호출이 누적된다. CommentSession은 200ms 디바운스로 save를 묶고, dispose 시 마지막 pending save를 flush.</li>
+      <li><strong>영속 backend 선택 시점</strong>: <code>resolveCustomTextEditor</code>가 호출될 때마다 <code>workspace.getConfiguration('mdReview').get('persistenceBackend')</code> 읽어 backend 결정. settings 변경은 reload 후 반영 (현재 instance는 lock).</li>
+      <li><strong>WebView reload 시 코멘트 복원</strong>: WebView 활성화 시 <code>store.load(docUri)</code> 호출 → 코멘트 array → <code>renderUpdate</code> 메시지로 패널 초기화. 이게 영속 round-trip 통합 검증의 핵심 지점.</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep CommentSession</code> exit code 0 (3개 이상 it 블록 — add → save 호출 / WebView 재열림 시 load 호출 / dispose 시 pending flush)</li>
+      <li><input type="checkbox" disabled> 전체 <code>npm test</code> exit code 0 (P0+P1+P2+P3 합계 60+ 통과)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit code 0 (cost-guard 포함)</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증 <code>! rg '[\x{4E00}-\x{9FFF}]' src/ test/ media/webview/</code> 0건</li>
+      <li><input type="checkbox" disabled> <strong>F5 manual smoke 체크리스트</strong>: <code>docs/plans/p3/p3-manual-smoke.md</code> 7개 항목 모두 PASS (screenshot 첨부 또는 텍스트 확인)</li>
+      <li><input type="checkbox" disabled> <strong>영속 round-trip 수동 검증</strong>: 사이드카 backend로 코멘트 1개 추가 → WebView 닫기 → 다시 열기 → 동일 코멘트가 패널에 복원됨 확인 (또는 <code>cat *.review.json</code>으로 디스크 확인)</li>
+      <li><input type="checkbox" disabled> <strong>backend 전환 검증</strong>: settings를 <code>workspaceState</code>로 변경 → reload → 동일 코멘트 추가 → 사이드카 파일이 새로 생성되지 않음 확인</li>
+      <li><input type="checkbox" disabled> <strong>code-reviewer agent 별도 lane 리뷰 통과</strong> — CRITICAL/HIGH 0건</li>
+    </ul>
+  </section>
+
+</section>
+
+<!-- ============================== 4. Architecture Diagram ============================== -->
+<section id="sec-arch">
+  <h2>4. Architecture Diagram</h2>
+
+  <div class="ascii">
+P3 WebView 아키텍처 — 양방향 메시지 + 본문 host 보유
+
+   +-------------------------------------------------------------+
+   |                    VSCode Extension Host                    |
+   |                                                             |
+   |  +-----------------------+    +----------------------+      |
+   |  | MarkdownReviewEditor  |--->| markdown-it (render) |      |
+   |  | (CustomTextEditorProv)|    +----------+-----------+      |
+   |  +----+------------------+               |                  |
+   |       |                                  v                  |
+   |       |          +-------------------------------+          |
+   |       |          | HTML 조각 (data-line attrs)   |          |
+   |       |          +---------------+---------------+          |
+   |       |                          |                          |
+   |       v                          v  (postMessage)           |
+   |  +-----------+         +--------------------+               |
+   |  |WebView    |&lt;-------|  WebViewBridge      |               |
+   |  |Bridge     |--------&gt;|  zod parse 양단     |               |
+   |  +-----+-----+         +---------+----------+               |
+   |        |                         |                          |
+   |        v                         v                          |
+   |  +------------+        +-------------------+                |
+   |  | Anchor     |        | CommentSession    |                |
+   |  | Resolver   |        | (메시지 + CRUD     |                |
+   |  | (line/col) |        |  + debounce save) |                |
+   |  +------------+        +---------+---------+                |
+   |                                  |                          |
+   |                                  v                          |
+   |                        +--------------------+               |
+   |                        |  CommentStore (P2) |               |
+   |                        +---------+----------+               |
+   |                                  |                          |
+   |                                  v                          |
+   |                  +---------------+----------------+         |
+   |                  |  PersistenceBackend (P2)       |         |
+   |                  |  ├─ SidecarPersistence         |         |
+   |                  |  └─ WorkspaceStatePersistence  |         |
+   |                  +--------------------------------+         |
+   +-------------------------------------------------------------+
+                                  ^
+                                  | postMessage (zod validated)
+                                  v
+   +-------------------------------------------------------------+
+   |                       WebView (sandboxed)                   |
+   |   nonce=<random> + strict CSP                               |
+   |                                                             |
+   |   +-----------------------+    +---------------------+      |
+   |   | main 영역 #doc-body   |    | aside #panel        |      |
+   |   | (HTML 조각 inject)    |    | (코멘트 목록 + 제출) |      |
+   |   +-----+-----------------+    +---------+-----------+      |
+   |         |                                |                  |
+   |         v                                v                  |
+   |   +-----------------+              +-----------------+      |
+   |   | inline-overlay  |              | comment-panel   |      |
+   |   | (selection→btn) |              | (목록 + 스크롤) |      |
+   |   +-----------------+              +-----------------+      |
+   +-------------------------------------------------------------+
+
+   본문 권위 사본: Extension Host의 vscode.TextDocument
+   WebView로는: 렌더링된 HTML 조각만 (본문 raw 직렬화 금지)
+  </div>
+
+  <div class="callout info">
+    <strong>핵심 invariant</strong>
+    <ul>
+      <li>WebView는 본문 raw text를 보지 않는다 — 렌더링된 HTML 조각만 받는다.</li>
+      <li>모든 양방향 메시지는 zod schema로 양단 parse 통과 후에만 처리한다.</li>
+      <li>코멘트 권위 사본은 host 측 CommentSession이 보유하며 WebView는 mirror.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================== 5. Critical Code Specs ============================== -->
+<section id="sec-code">
+  <h2>5. Critical Code Specs</h2>
+
+  <section id="sec-code-editor">
+    <h3>5.1 <code>src/editor/MarkdownReviewEditor.ts</code></h3>
+<pre><span class="kw">import</span> * <span class="kw">as</span> vscode <span class="kw">from</span> <span class="str">'vscode'</span>;
+<span class="kw">import</span> MarkdownIt <span class="kw">from</span> <span class="str">'markdown-it'</span>;
+<span class="kw">import</span> { WebViewBridge } <span class="kw">from</span> <span class="str">'./WebViewBridge'</span>;
+<span class="kw">import</span> { CommentSession } <span class="kw">from</span> <span class="str">'./CommentSession'</span>;
+<span class="kw">import</span> { createPersistenceBackend } <span class="kw">from</span> <span class="str">'../store/PersistenceBackendFactory'</span>;
+<span class="kw">import</span> { CommentStore } <span class="kw">from</span> <span class="str">'../store/CommentStore'</span>;
+
+<span class="kw">export class</span> <span class="typ">MarkdownReviewEditor</span> <span class="kw">implements</span> vscode.<span class="typ">CustomTextEditorProvider</span> {
+  <span class="kw">static readonly</span> viewType = <span class="str">'mdReview.editor'</span>;
+
+  <span class="kw">private readonly</span> md: MarkdownIt;
+
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> context: vscode.<span class="typ">ExtensionContext</span>) {
+    <span class="com">// markdown-it은 host 측에서 단일 인스턴스로 reuse.</span>
+    <span class="com">// html: false → 인라인 HTML 차단 (XSS 방지).</span>
+    <span class="com">// linkify: true → 자동 링크화.</span>
+    <span class="kw">this</span>.md = <span class="kw">new</span> <span class="fn">MarkdownIt</span>({ html: <span class="kw">false</span>, linkify: <span class="kw">true</span> });
+    <span class="fn">attachDataLineAttrs</span>(<span class="kw">this</span>.md);
+  }
+
+  <span class="kw">async</span> <span class="fn">resolveCustomTextEditor</span>(
+    document: vscode.<span class="typ">TextDocument</span>,
+    webviewPanel: vscode.<span class="typ">WebviewPanel</span>,
+    _token: vscode.<span class="typ">CancellationToken</span>,
+  ): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt; {
+    <span class="kw">const</span> bridge = <span class="kw">new</span> <span class="fn">WebViewBridge</span>(webviewPanel.webview);
+
+    <span class="kw">const</span> config = vscode.workspace.<span class="fn">getConfiguration</span>(<span class="str">'mdReview'</span>);
+    <span class="kw">const</span> backendKind = config.<span class="fn">get</span>&lt;<span class="typ">string</span>&gt;(<span class="str">'persistenceBackend'</span>, <span class="str">'sidecar'</span>);
+    <span class="kw">const</span> backend = <span class="fn">createPersistenceBackend</span>(backendKind, {
+      memento: <span class="kw">this</span>.context.workspaceState,
+    });
+    <span class="kw">const</span> store = <span class="kw">new</span> <span class="fn">CommentStore</span>(backend);
+    <span class="kw">const</span> session = <span class="kw">new</span> <span class="fn">CommentSession</span>(document, store, bridge);
+
+    webviewPanel.webview.options = {
+      enableScripts: <span class="kw">true</span>,
+      localResourceRoots: [
+        vscode.<span class="typ">Uri</span>.<span class="fn">joinPath</span>(<span class="kw">this</span>.context.extensionUri, <span class="str">'media'</span>),
+      ],
+    };
+    webviewPanel.webview.html = <span class="kw">this</span>.<span class="fn">renderShell</span>(
+      webviewPanel.webview,
+      document,
+    );
+
+    <span class="com">// 디바운스 후 본문 변경을 WebView로 push.</span>
+    <span class="com">// 외부 에디터에서 같은 파일을 편집하는 경우에도 일관 표시.</span>
+    <span class="kw">const</span> changeSub = vscode.workspace.<span class="fn">onDidChangeTextDocument</span>(
+      <span class="fn">debounce</span>((e) =&gt; {
+        <span class="kw">if</span> (e.document.uri.<span class="fn">toString</span>() !== document.uri.<span class="fn">toString</span>()) <span class="kw">return</span>;
+        bridge.<span class="fn">post</span>({ type: <span class="str">'renderUpdate'</span>, html: <span class="kw">this</span>.<span class="fn">renderBody</span>(document) });
+      }, <span class="num">100</span>),
+    );
+
+    webviewPanel.onDidDispose(<span class="kw">async</span> () =&gt; {
+      changeSub.<span class="fn">dispose</span>();
+      <span class="kw">await</span> session.<span class="fn">dispose</span>();
+    });
+
+    <span class="kw">await</span> session.<span class="fn">start</span>(<span class="kw">this</span>.<span class="fn">renderBody</span>(document));
+  }
+
+  <span class="kw">private</span> <span class="fn">renderShell</span>(webview: vscode.<span class="typ">Webview</span>, _document: vscode.<span class="typ">TextDocument</span>): <span class="typ">string</span> {
+    <span class="kw">const</span> nonce = <span class="fn">randomNonce</span>();
+    <span class="kw">const</span> scriptUri = webview.<span class="fn">asWebviewUri</span>(
+      vscode.<span class="typ">Uri</span>.<span class="fn">joinPath</span>(<span class="kw">this</span>.context.extensionUri, <span class="str">'media'</span>, <span class="str">'webview'</span>, <span class="str">'main.js'</span>),
+    );
+    <span class="kw">const</span> styleUri = webview.<span class="fn">asWebviewUri</span>(
+      vscode.<span class="typ">Uri</span>.<span class="fn">joinPath</span>(<span class="kw">this</span>.context.extensionUri, <span class="str">'media'</span>, <span class="str">'webview'</span>, <span class="str">'style.css'</span>),
+    );
+    <span class="com">// CSP는 § 7 참조. nonce는 매 open마다 갱신.</span>
+    <span class="kw">return</span> <span class="fn">renderHtmlTemplate</span>({ nonce, scriptUri, styleUri, csp: webview.cspSource });
+  }
+
+  <span class="kw">private</span> <span class="fn">renderBody</span>(document: vscode.<span class="typ">TextDocument</span>): <span class="typ">string</span> {
+    <span class="kw">return</span> <span class="kw">this</span>.md.<span class="fn">render</span>(document.<span class="fn">getText</span>());
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-bridge">
+    <h3>5.2 <code>src/editor/WebViewBridge.ts</code></h3>
+<pre><span class="kw">import</span> * <span class="kw">as</span> vscode <span class="kw">from</span> <span class="str">'vscode'</span>;
+<span class="kw">import</span> {
+  HostToWebViewMessageSchema,
+  WebViewToHostMessageSchema,
+  <span class="kw">type</span> <span class="typ">HostToWebViewMessage</span>,
+  <span class="kw">type</span> <span class="typ">WebViewToHostMessage</span>,
+} <span class="kw">from</span> <span class="str">'./messages'</span>;
+
+<span class="kw">export type</span> <span class="typ">WebViewMessageHandler</span> = (msg: <span class="typ">WebViewToHostMessage</span>) =&gt; <span class="typ">void</span> | <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt;;
+
+<span class="kw">export class</span> <span class="typ">WebViewBridge</span> {
+  <span class="kw">private static readonly</span> output = vscode.window.<span class="fn">createOutputChannel</span>(<span class="str">'mdReview'</span>);
+
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> webview: <span class="typ">Pick</span>&lt;vscode.<span class="typ">Webview</span>, <span class="str">'postMessage'</span> | <span class="str">'onDidReceiveMessage'</span>&gt;) {}
+
+  <span class="fn">post</span>(msg: <span class="typ">HostToWebViewMessage</span>): <span class="typ">Thenable</span>&lt;<span class="typ">boolean</span>&gt; {
+    <span class="com">// 송신 직전 schema 검증 — 잘못된 host 코드를 빨리 발견.</span>
+    HostToWebViewMessageSchema.<span class="fn">parse</span>(msg);
+    <span class="kw">return</span> <span class="kw">this</span>.webview.<span class="fn">postMessage</span>(msg);
+  }
+
+  <span class="fn">onMessage</span>(handler: <span class="typ">WebViewMessageHandler</span>): vscode.<span class="typ">Disposable</span> {
+    <span class="kw">return</span> <span class="kw">this</span>.webview.<span class="fn">onDidReceiveMessage</span>(<span class="kw">async</span> (raw: <span class="typ">unknown</span>) =&gt; {
+      <span class="kw">const</span> result = WebViewToHostMessageSchema.<span class="fn">safeParse</span>(raw);
+      <span class="kw">if</span> (!result.success) {
+        <span class="com">// 잘못된 메시지는 silently drop하지 않고 로그 + drop.</span>
+        WebViewBridge.output.<span class="fn">appendLine</span>(
+          `[bridge] dropped invalid message: ${result.error.message}`,
+        );
+        <span class="kw">return</span>;
+      }
+      <span class="kw">await</span> <span class="fn">handler</span>(result.data);
+    });
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-anchor">
+    <h3>5.3 <code>src/editor/AnchorResolver.ts</code></h3>
+<pre><span class="kw">import</span> * <span class="kw">as</span> vscode <span class="kw">from</span> <span class="str">'vscode'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">CommentAnchor</span> } <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+
+<span class="kw">export interface</span> <span class="typ">DomSelectionInfo</span> {
+  <span class="com">// WebView가 보고하는 selection 정보.</span>
+  <span class="com">// startLine: data-line attr으로 식별된 markdown-it token의 시작 행 (1-based 또는 0-based — § 5.3 정책).</span>
+  startLine: <span class="typ">number</span>;
+  startColInLine: <span class="typ">number</span>;
+  length: <span class="typ">number</span>;
+}
+
+<span class="kw">export class</span> <span class="typ">AnchorResolver</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> document: vscode.<span class="typ">TextDocument</span>) {}
+
+  <span class="com">// DOM 좌표 → CommentAnchor (TextDocument 정규화 사용).</span>
+  <span class="fn">resolveAnchorFromDom</span>(dom: <span class="typ">DomSelectionInfo</span>): <span class="typ">CommentAnchor</span> {
+    <span class="kw">const</span> line = <span class="kw">this</span>.<span class="fn">clampLine</span>(dom.startLine);
+    <span class="kw">const</span> lineText = <span class="kw">this</span>.document.<span class="fn">lineAt</span>(line).text;
+    <span class="kw">const</span> col = <span class="typ">Math</span>.<span class="fn">min</span>(<span class="typ">Math</span>.<span class="fn">max</span>(dom.startColInLine, <span class="num">0</span>), lineText.length);
+    <span class="kw">const</span> length = <span class="typ">Math</span>.<span class="fn">max</span>(dom.length, <span class="num">0</span>);
+    <span class="kw">return</span> { line, col, length };
+  }
+
+  <span class="com">// CommentAnchor → DOM 좌표 (panel 클릭 → 본문 스크롤 시).</span>
+  <span class="fn">resolveDomFromAnchor</span>(anchor: <span class="typ">CommentAnchor</span>): <span class="typ">DomSelectionInfo</span> {
+    <span class="kw">const</span> line = <span class="kw">this</span>.<span class="fn">clampLine</span>(anchor.line);
+    <span class="kw">return</span> {
+      startLine: line,
+      startColInLine: anchor.col,
+      length: anchor.length,
+    };
+  }
+
+  <span class="kw">private</span> <span class="fn">clampLine</span>(line: <span class="typ">number</span>): <span class="typ">number</span> {
+    <span class="kw">const</span> max = <span class="kw">this</span>.document.lineCount - <span class="num">1</span>;
+    <span class="kw">return</span> <span class="typ">Math</span>.<span class="fn">min</span>(<span class="typ">Math</span>.<span class="fn">max</span>(line, <span class="num">0</span>), max);
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-webview">
+    <h3>5.4 <code>media/webview/main.ts</code> (entry point)</h3>
+<pre><span class="kw">import</span> { InlineOverlay } <span class="kw">from</span> <span class="str">'./inline-overlay'</span>;
+<span class="kw">import</span> { CommentPanel } <span class="kw">from</span> <span class="str">'./comment-panel'</span>;
+
+<span class="kw">declare function</span> <span class="fn">acquireVsCodeApi</span>(): {
+  <span class="fn">postMessage</span>(msg: <span class="typ">unknown</span>): <span class="typ">void</span>;
+};
+
+<span class="kw">const</span> api = <span class="fn">acquireVsCodeApi</span>();
+<span class="kw">const</span> docBody = document.<span class="fn">getElementById</span>(<span class="str">'doc-body'</span>) <span class="kw">as</span> <span class="typ">HTMLElement</span>;
+<span class="kw">const</span> panelRoot = document.<span class="fn">getElementById</span>(<span class="str">'panel'</span>) <span class="kw">as</span> <span class="typ">HTMLElement</span>;
+<span class="kw">const</span> overlayRoot = document.<span class="fn">getElementById</span>(<span class="str">'overlay-root'</span>) <span class="kw">as</span> <span class="typ">HTMLElement</span>;
+
+<span class="kw">const</span> overlay = <span class="kw">new</span> <span class="fn">InlineOverlay</span>(overlayRoot, (selection, type) =&gt; {
+  <span class="kw">const</span> payload = { type: <span class="str">'addComment'</span>, selection, kind: type };
+  <span class="fn">postWithBudgetGuard</span>(payload);
+});
+
+<span class="kw">const</span> panel = <span class="kw">new</span> <span class="fn">CommentPanel</span>(panelRoot, {
+  onSubmit: () =&gt; <span class="fn">postWithBudgetGuard</span>({ type: <span class="str">'submit'</span> }),
+  onItemClick: (id) =&gt; <span class="fn">scrollAnchor</span>(id),
+});
+
+window.<span class="fn">addEventListener</span>(<span class="str">'message'</span>, (e: <span class="typ">MessageEvent</span>) =&gt; {
+  <span class="kw">const</span> msg = e.data;
+  <span class="kw">switch</span> (msg.type) {
+    <span class="kw">case</span> <span class="str">'renderUpdate'</span>: docBody.innerHTML = msg.html; <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="str">'commentsUpdate'</span>: panel.<span class="fn">setComments</span>(msg.comments); <span class="kw">break</span>;
+  }
+});
+
+<span class="kw">function</span> <span class="fn">postWithBudgetGuard</span>(payload: <span class="typ">unknown</span>): <span class="typ">void</span> {
+  <span class="kw">const</span> serialized = <span class="typ">JSON</span>.<span class="fn">stringify</span>(payload);
+  <span class="kw">if</span> (serialized.length &gt; <span class="num">2048</span>) {
+    console.<span class="fn">warn</span>(<span class="str">'[mdReview] payload exceeds 2KB; rejecting send'</span>);
+    <span class="kw">return</span>;
+  }
+  api.<span class="fn">postMessage</span>(payload);
+}
+
+<span class="kw">function</span> <span class="fn">scrollAnchor</span>(id: <span class="typ">string</span>): <span class="typ">void</span> {
+  <span class="kw">const</span> el = docBody.<span class="fn">querySelector</span>(`[data-comment-id="${id}"]`);
+  <span class="kw">if</span> (!el) <span class="kw">return</span>;
+  el.<span class="fn">scrollIntoView</span>({ block: <span class="str">'center'</span> });
+  el.<span class="fn">classList</span>.<span class="fn">add</span>(<span class="str">'is-highlighted'</span>);
+  setTimeout(() =&gt; el.classList.<span class="fn">remove</span>(<span class="str">'is-highlighted'</span>), <span class="num">1500</span>);
+}
+</pre>
+  </section>
+
+  <section id="sec-code-msg">
+    <h3>5.5 <code>src/editor/messages.ts</code> (Message Contract)</h3>
+<pre><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+<span class="kw">import</span> { CommentSchema, CommentAnchorSchema, CommentTypeSchema } <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+
+<span class="com">// Host → WebView (서버 푸시).</span>
+<span class="kw">export const</span> HostToWebViewMessageSchema = z.<span class="fn">discriminatedUnion</span>(<span class="str">'type'</span>, [
+  z.<span class="fn">object</span>({ type: z.<span class="fn">literal</span>(<span class="str">'renderUpdate'</span>), html: z.<span class="fn">string</span>() }),
+  z.<span class="fn">object</span>({ type: z.<span class="fn">literal</span>(<span class="str">'commentsUpdate'</span>), comments: z.<span class="fn">array</span>(CommentSchema) }),
+  z.<span class="fn">object</span>({ type: z.<span class="fn">literal</span>(<span class="str">'submitAck'</span>), placeholder: z.<span class="fn">boolean</span>() }),
+]);
+<span class="kw">export type</span> <span class="typ">HostToWebViewMessage</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> HostToWebViewMessageSchema&gt;;
+
+<span class="com">// WebView → Host (사용자 액션).</span>
+<span class="kw">export const</span> WebViewToHostMessageSchema = z.<span class="fn">discriminatedUnion</span>(<span class="str">'type'</span>, [
+  z.<span class="fn">object</span>({
+    type: z.<span class="fn">literal</span>(<span class="str">'addComment'</span>),
+    kind: CommentTypeSchema,
+    anchor: CommentAnchorSchema,
+    note: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+    before: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+    after: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  }),
+  z.<span class="fn">object</span>({
+    type: z.<span class="fn">literal</span>(<span class="str">'removeComment'</span>),
+    id: z.<span class="fn">string</span>(),
+  }),
+  z.<span class="fn">object</span>({
+    type: z.<span class="fn">literal</span>(<span class="str">'updateComment'</span>),
+    id: z.<span class="fn">string</span>(),
+    patch: z.<span class="fn">object</span>({
+      note: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+      before: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+      after: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+    }),
+  }),
+  z.<span class="fn">object</span>({ type: z.<span class="fn">literal</span>(<span class="str">'submit'</span>) }),
+]);
+<span class="kw">export type</span> <span class="typ">WebViewToHostMessage</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> WebViewToHostMessageSchema&gt;;
+</pre>
+  </section>
+</section>
+
+<!-- ============================== 6. ADR 운영화 ============================== -->
+<section id="sec-adr">
+  <h2>6. ADR 운영화</h2>
+  <table>
+    <thead><tr><th>마스터 ADR</th><th>P3에서의 적용</th></tr></thead>
+    <tbody>
+      <tr><td>AD-1: 데이터 모델은 client/server interchangeable JSON</td><td>WebView ↔ Host 메시지 payload는 Comment 모델 그대로 사용. 추가 변환 layer 없음. zod schema도 P2와 같은 정의 reuse.</td></tr>
+      <tr><td>AD-3: 모든 외부 입력은 zod로 검증</td><td>WebView → Host 메시지는 <code>WebViewBridge.onMessage</code>에서 zod parse. Host → WebView도 송신 직전 검증 (양단 검증).</td></tr>
+      <tr><td>AD-5: VSCode API는 의존성 주입으로 추상화</td><td><code>WebViewBridge</code> 생성자는 <code>Pick&lt;Webview, 'postMessage' | 'onDidReceiveMessage'&gt;</code> 인터페이스로만 의존 → 단위 테스트에서 fake 객체 주입.</td></tr>
+      <tr><td>AD-6 (NEW): 본문은 host 단일 권위 사본</td><td>본문 raw text는 <code>vscode.TextDocument</code>에만 존재. WebView로는 markdown-it 렌더 결과만 송신. R-5(대용량 직렬화) 1차 방어.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 7. CSP + Payload Budget ============================== -->
+<section id="sec-csp">
+  <h2>7. CSP + Payload Budget (P3 특수 섹션)</h2>
+
+  <h3>7.1 Content Security Policy</h3>
+
+<pre>&lt;meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  style-src ${webview.cspSource} 'unsafe-inline';
+  script-src 'nonce-${nonce}';
+  img-src ${webview.cspSource} https: data:;
+  font-src ${webview.cspSource};
+"&gt;
+</pre>
+
+  <ul>
+    <li><code>default-src 'none'</code>: 모든 리소스는 명시적으로만 허용 (deny-by-default).</li>
+    <li><code>script-src 'nonce-${nonce}'</code>: 스크립트는 매 open마다 새 nonce 일치 시에만 실행. inline script는 nonce 없으면 차단.</li>
+    <li><code>style-src 'unsafe-inline'</code>: VSCode 테마 변수 사용을 위해 inline style 허용 (테마 색상 동적 변경 지원).</li>
+    <li><code>img-src ... https: data:</code>: 마크다운 안의 이미지(외부 https 또는 base64 data URI) 허용. 단 본문 markdown-it 렌더가 <code>html: false</code>이므로 임의 <code>&lt;img&gt;</code> 주입은 불가, markdown image 문법만.</li>
+  </ul>
+
+  <h3>7.2 Payload Budget</h3>
+
+  <table>
+    <thead><tr><th>메시지 type</th><th>방향</th><th>상한</th><th>측정</th></tr></thead>
+    <tbody>
+      <tr><td><code>addComment</code></td><td>WebView → Host</td><td>2KB</td><td><code>JSON.stringify(payload).length &lt; 2048</code></td></tr>
+      <tr><td><code>updateComment</code></td><td>WebView → Host</td><td>2KB</td><td>위와 동일</td></tr>
+      <tr><td><code>removeComment</code></td><td>WebView → Host</td><td>0.5KB</td><td>id만 송신</td></tr>
+      <tr><td><code>submit</code></td><td>WebView → Host</td><td>0.5KB</td><td>type만 송신</td></tr>
+      <tr><td><code>renderUpdate</code></td><td>Host → WebView</td><td>본문 크기에 비례 (상한 없음)</td><td>R-5 위험 영역 — § 9 P3-R-3 참조</td></tr>
+      <tr><td><code>commentsUpdate</code></td><td>Host → WebView</td><td>코멘트 수 × 1KB</td><td>50+ 코멘트 시 회귀 검토</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>renderUpdate payload 위험</strong>
+    본문이 500KB+이면 markdown-it 렌더 HTML도 그 비례 크기가 된다. 본 phase에서는 상한을 두지 않고 R-5 운영 대비책으로 측정만 한다(OutputChannel에 size 로그). 임계치 초과 시 P4 진입 전 chunk 단위 lazy load 검토.
+  </div>
+</section>
+
+<!-- ============================== 8. Acceptance Criteria ============================== -->
+<section id="sec-ac">
+  <h2>8. Acceptance Criteria</h2>
+  <table>
+    <thead><tr><th>#</th><th>기준</th><th>검증 일자</th><th>검증 절차</th><th>통과</th></tr></thead>
+    <tbody>
+      <tr><td>P3-AC-1</td><td>"Open with Markdown Review" 컨텍스트 등장</td><td>Day 1</td><td>F5 → <code>.md</code> 우클릭 → "Open with..." → 항목 visible (screenshot)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-2</td><td>본문이 markdown-it으로 렌더되어 WebView 본문에 표시</td><td>Day 2</td><td>F5 → 임의 <code>.md</code> 열기 → heading/list/code가 포맷되어 보임 (screenshot)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-3</td><td>본문 selection 시 인라인 오버레이 버튼 표시</td><td>Day 2</td><td>F5 → 본문 텍스트 드래그 선택 → suggestion/question 버튼 popover (screenshot)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-4</td><td>suggestion 추가 → 사이드 panel에 항목 1개 추가</td><td>Day 2</td><td>F5 → 선택 → suggestion 버튼 → panel 카운트 +1, DOM에 <code>data-comment-id</code> 노드 +1 (수동 + DevTools)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-5</td><td>panel 항목 클릭 → 본문 anchor 스크롤 + 1.5s 하이라이트</td><td>Day 2</td><td>F5 → 항목 클릭 → <code>scrollIntoView</code> 동작 + <code>.is-highlighted</code> class 1.5s 동안 부착 (DevTools 관찰)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-6</td><td>WebView 닫고 다시 열어도 코멘트 복원 (P2 영속 회귀)</td><td>Day 2.5</td><td>코멘트 1개 추가 → 패널 닫기 → 같은 <code>.md</code> 다시 "Open with Markdown Review" → 동일 코멘트가 panel에 나타남 (screenshot + <code>cat *.review.json</code>)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-7</td><td>[제출] 버튼 클릭 시 placeholder toast 응답</td><td>Day 2</td><td>F5 → panel [제출] 클릭 → <code>showInformationMessage</code> toast 표시 (screenshot)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-8</td><td>AnchorResolver line/col 계산 단위 테스트</td><td>Day 1</td><td><code>npm test -- --grep AnchorResolver</code> exit 0, 6+ it 통과</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-9</td><td>WebView ↔ Host 메시지는 zod 양단 검증</td><td>Day 1</td><td><code>npm test -- --grep messages</code> exit 0. 잘못된 type, 누락 필드 모두 parse 실패 assert</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-10</td><td>WebView payload &lt; 2KB (addComment 기준)</td><td>Day 2</td><td><code>npm test -- --grep payload-budget</code> exit 0. <code>JSON.stringify(samplePayload).length &lt; 2048</code> assert</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-11</td><td>CSP 위반 0건</td><td>Day 2</td><td>F5 → DevTools Console → CSP error 메시지 0건 (screenshot)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-12</td><td>WebViewBridge schema 실패 시 OutputChannel 로그 + drop</td><td>Day 1</td><td><code>npm test -- --grep "WebViewBridge"</code> 안에서 잘못된 msg 주입 → output channel <code>appendLine</code> 호출 spy + handler 미호출 assert</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-13</td><td>backend 전환 (settings 변경) 시 reload 후 동작</td><td>Day 2.5</td><td>settings를 <code>workspaceState</code>로 변경 → reload window → 코멘트 추가 → 사이드카 파일 미생성 확인 (수동, <code>ls *.review.json</code>)</td><td><input type="checkbox" disabled></td></tr>
+      <tr><td>P3-AC-14</td><td>한자 정적 검증</td><td>Day 2.5</td><td><code>! rg '[\x{4E00}-\x{9FFF}]' src/ test/ media/webview/</code> exit 0</td><td><input type="checkbox" disabled></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 9. Risks & Mitigations ============================== -->
+<section id="sec-risks">
+  <h2>9. Risks & Mitigations</h2>
+  <table>
+    <thead><tr><th>#</th><th>위험</th><th>가능성</th><th>영향</th><th>완화</th><th>책임</th></tr></thead>
+    <tbody>
+      <tr><td>P3-R-1</td><td>WebView CSP 차단으로 인라인 스크립트/스타일 실패</td><td>중</td><td>높음</td><td>nonce 기반 script-src + style 'unsafe-inline'은 VSCode 권장 패턴. DevTools 콘솔 매 phase 종료 시 확인. CSP error 0건 acceptance.</td><td>Day 2</td></tr>
+      <tr><td>P3-R-2</td><td>selectionchange 이벤트 thrashing (인라인 버튼 깜빡임)</td><td>높음</td><td>낮음</td><td>50ms 디바운스. selection이 동일 range면 reposition만 하고 DOM rebuild 안 함.</td><td>Day 2</td></tr>
+      <tr><td>P3-R-3 (마스터 R-5 운영화)</td><td>대용량 <code>.md</code> 직렬화 부담</td><td>낮음</td><td>중</td><td>본문 raw는 WebView로 송신 안 함. markdown-it 렌더 HTML만 송신. <code>renderUpdate</code> payload size를 OutputChannel에 로그하여 임계치 초과 시 알림. 향후 chunk lazy load 검토.</td><td>Day 1 + Day 2</td></tr>
+      <tr><td>P3-R-4</td><td>markdown-it data-line attr이 일부 token에 누락 — anchor가 wrong line으로 매핑</td><td>중</td><td>중</td><td><code>attachDataLineAttrs</code>가 paragraph/heading/list_item/blockquote/code_block 등 주요 토큰에 명시적으로 attr 주입. AnchorResolver가 line 누락 시 0으로 clamp. round-trip 회귀 테스트(P3-AC-6)로 검증.</td><td>Day 1</td></tr>
+      <tr><td>P3-R-5</td><td>WebView dispose 직전 pending save가 손실</td><td>중</td><td>높음</td><td>CommentSession.dispose는 pending debounce save를 flush(<code>await</code>). webviewPanel.onDidDispose 콜백을 <code>async</code>로 두고 flush 완료까지 대기.</td><td>Day 2.5</td></tr>
+      <tr><td>P3-R-6</td><td>WebView ↔ Host 메시지 schema 변경 시 양단 incompatibility</td><td>낮음</td><td>중</td><td>messages.ts에 zod schema 단일 source. host와 WebView 모두 동일 schema import. schema 변경은 양단 동시 수정 + 단위 테스트로 강제.</td><td>Day 1 + 후속 phase</td></tr>
+      <tr><td>P3-R-7</td><td>대량 코멘트(50+) 패널 렌더 jank</td><td>낮음</td><td>낮음</td><td>본 phase 범위 외. 50+에서 jank 발생 시 후속 phase에서 virtual list 검토. README에 50+ 코멘트 권장 경고 명시.</td><td>P3+α</td></tr>
+      <tr><td>P3-R-8</td><td>외부 에디터로 본문 편집 → anchor offset shift로 코멘트 위치 깨짐</td><td>중</td><td>중</td><td>본 phase는 anchor를 단순 (line, col, length) tuple로 유지. 본문 변경 시 anchor 추적은 본 phase 범위 외 (향후 OT/CRDT 기반 anchor stability 검토). 사용자가 외부 편집 후 anchor가 wrong line인 케이스는 known limitation.</td><td>P3+α</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 10. Exit Gate to P4 ============================== -->
+<section id="sec-exit">
+  <h2>10. Exit Gate to P4 (Submit Flow)</h2>
+  <ul class="exit-criteria">
+    <li><input type="checkbox" disabled> <strong>소스 산출물 9개 존재</strong>: <code>src/editor/{MarkdownReviewEditor,WebViewBridge,AnchorResolver,messages,CommentSession}.ts</code> + <code>media/webview/{index.html,main.ts,inline-overlay.ts,comment-panel.ts,style.css}</code> 모두 git tracked.</li>
+    <li><input type="checkbox" disabled> <strong>전체 <code>npm test</code> exit 0</strong> — P0+P1+P2+P3 합계 60+ it 통과.</li>
+    <li><input type="checkbox" disabled> <strong><code>npm run compile</code> + <code>npm run compile:webview</code> exit 0</strong> — host + webview 두 TS 빌드 모두 통과.</li>
+    <li><input type="checkbox" disabled> <strong><code>npm run lint</code> exit 0</strong> — cost-guard 포함.</li>
+    <li><input type="checkbox" disabled> <strong>한자 정적 검증</strong>: <code>! rg '[\x{4E00}-\x{9FFF}]' src/ test/ media/webview/</code> exit 0.</li>
+    <li><input type="checkbox" disabled> <strong>F5 manual smoke 7개 항목 PASS</strong>: <code>docs/plans/p3/p3-manual-smoke.md</code> 체크리스트 작성 + 사용자 확인.</li>
+    <li><input type="checkbox" disabled> <strong>영속 round-trip 회귀 PASS</strong>: WebView 닫고 다시 열기 시 코멘트 복원 (P3-AC-6).</li>
+    <li><input type="checkbox" disabled> <strong>[제출] 버튼 hook 지점 안정</strong>: P4가 placeholder <code>showInformationMessage</code>를 LLMOrchestrator 호출로 단순 교체 가능한 구조 — <code>CommentSession.onSubmit</code> 콜백이 외부 주입.</li>
+    <li><input type="checkbox" disabled> <strong>code-reviewer agent 별도 lane 리뷰 통과</strong>: P2 + P3 일괄, CRITICAL/HIGH 0건.</li>
+    <li><input type="checkbox" disabled> <strong>P4 계약 문서화</strong>: <code>CommentSession.attachSubmitHandler(handler)</code> API가 export되어 P4가 LLM 호출을 plug-in 가능.</li>
+  </ul>
+</section>
+
+<!-- ============================== 11. 부록 ============================== -->
+<section id="sec-appendix">
+  <h2>11. 부록</h2>
+  <section id="sec-appendix-a">
+    <h3>부록 A. 환경 변수 / settings</h3>
+    <table>
+      <thead><tr><th>키</th><th>타입</th><th>기본값</th><th>의미</th><th>도입 phase</th></tr></thead>
+      <tbody>
+        <tr><td><code>mdReview.persistenceBackend</code></td><td><code>'sidecar' | 'workspaceState'</code></td><td><code>'sidecar'</code></td><td>P2에서 도입. P3는 reload 시점에 read.</td><td>P2</td></tr>
+      </tbody>
+    </table>
+    <p>P3는 신규 settings를 추가하지 않는다. 다음 settings는 P3가 read하는 기존 키이다.</p>
+  </section>
+  <section id="sec-appendix-b">
+    <h3>부록 B. 참고문헌</h3>
+    <ul>
+      <li>마스터 계획서: <code>docs/plans/vscode-md-review-plan.md</code> § P3</li>
+      <li>P2 상세 계획서: <code>docs/plans/p2/p2-detailed.html</code></li>
+      <li>VSCode CustomTextEditor API: <a href="https://code.visualstudio.com/api/extension-guides/custom-editors">code.visualstudio.com/api/extension-guides/custom-editors</a></li>
+      <li>VSCode WebView CSP 권장사항: <a href="https://code.visualstudio.com/api/extension-guides/webview#content-security-policy">code.visualstudio.com/api/extension-guides/webview</a></li>
+      <li>markdown-it 공식: <a href="https://github.com/markdown-it/markdown-it">github.com/markdown-it/markdown-it</a></li>
+      <li>Plan documents 규약: <code>~/.claude/rules/plan-documents.md</code></li>
+    </ul>
+  </section>
+</section>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P5 상세 계획서 — Diff 적용</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #d8d8d8;
+    --accent: #1f6feb;
+    --warn: #b97f00;
+    --danger: #b3261e;
+    --ok: #1e7f3a;
+    --code-bg: #f5f6f8;
+    --table-stripe: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  aside.toc {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border); padding: 24px 18px; background: #fbfbfb;
+  }
+  aside.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 10px; }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+  aside.toc ol li { margin: 4px 0; }
+  aside.toc ol li a { color: var(--fg); text-decoration: none; padding: 4px 6px; display: block; border-radius: 4px; }
+  aside.toc ol li a:hover { background: #eef2f7; color: var(--accent); }
+  aside.toc ol li ol { padding-left: 12px; margin-top: 2px; font-size: 12px; color: var(--muted); }
+  main { padding: 32px 40px 80px; max-width: 1100px; }
+  main h1 { font-size: 26px; margin: 0 0 6px; }
+  main .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+  main h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 6px; margin-top: 40px; }
+  main h3 { font-size: 16px; margin-top: 24px; }
+  main h4 { font-size: 14px; margin-top: 18px; color: var(--muted); }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.55; }
+  pre .kw { color: #b04bdb; } pre .str { color: #1e7f3a; } pre .com { color: #8a8a8a; font-style: italic; }
+  pre .num { color: #b97f00; } pre .typ { color: #1f6feb; } pre .fn { color: #b97f00; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  tbody tr:nth-child(odd) td { background: var(--table-stripe); }
+  .day-card { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 6px; padding: 18px 22px; margin: 18px 0; background: #fcfcfd; }
+  .day-card h3 { margin-top: 0; color: var(--accent); }
+  .day-card .meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .callout { border-radius: 6px; padding: 12px 16px; margin: 12px 0; border-left: 4px solid var(--accent); background: #eff5fd; }
+  .callout.info { border-left-color: var(--accent); background: #eff5fd; }
+  .callout.warn { border-left-color: var(--warn); background: #fdf6e7; }
+  .callout.danger { border-left-color: var(--danger); background: #fdecea; }
+  .callout.ok { border-left-color: var(--ok); background: #eaf6ee; }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .ascii { background: #1a1f29; color: #e6e6e6; padding: 18px 20px; border-radius: 6px; overflow-x: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #e9eef5; color: var(--fg); margin-right: 4px; }
+  .tag.warn { background: #fdf0d0; color: var(--warn); }
+  .tag.danger { background: #fbd9d6; color: var(--danger); }
+  .tag.ok { background: #d8eedf; color: var(--ok); }
+  ul.exit-criteria { list-style: none; padding-left: 0; }
+  ul.exit-criteria li { margin: 6px 0; padding-left: 22px; position: relative; }
+  ul.exit-criteria li input[type="checkbox"] { position: absolute; left: 0; top: 4px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    pre, table, .day-card, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#sec-overview">1. 개요</a></li>
+    <li><a href="#sec-dr">2. RALPLAN-DR 요약</a>
+      <ol>
+        <li><a href="#sec-dr-principles">2.1 Principles</a></li>
+        <li><a href="#sec-dr-drivers">2.2 Decision Drivers</a></li>
+        <li><a href="#sec-dr-options">2.3 Viable Options</a></li>
+        <li><a href="#sec-dr-rationale">2.4 선택 근거</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-days">3. Day-by-Day Work Package</a>
+      <ol>
+        <li><a href="#sec-day1">Day 1 — HunkComputer + DiffPresenter</a></li>
+        <li><a href="#sec-day15">Day 1.5 — Approver + WorkspaceEdit</a></li>
+        <li><a href="#sec-day15b">Day 1.5+ — Wiring + 회귀</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-arch">4. Architecture Diagram</a></li>
+    <li><a href="#sec-code">5. Critical Code Specs</a>
+      <ol>
+        <li><a href="#sec-code-hunk">5.1 HunkComputer</a></li>
+        <li><a href="#sec-code-presenter">5.2 DiffPresenter</a></li>
+        <li><a href="#sec-code-approver">5.3 HunkApprover</a></li>
+        <li><a href="#sec-code-edit">5.4 WorkspaceEditBuilder</a></li>
+        <li><a href="#sec-code-editor">5.5 MarkdownReviewEditor 전환</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-adr">6. ADR 운영화</a></li>
+    <li><a href="#sec-diff-lib">7. Diff 라이브러리 선택 근거</a></li>
+    <li><a href="#sec-ac">8. Acceptance Criteria</a></li>
+    <li><a href="#sec-risks">9. Risks &amp; Mitigations</a></li>
+    <li><a href="#sec-exit">10. Exit Gate to P6</a></li>
+    <li><a href="#sec-appendix">11. 부록</a>
+      <ol>
+        <li><a href="#sec-appendix-a">A. settings / 환경</a></li>
+        <li><a href="#sec-appendix-b">B. 참고문헌</a></li>
+      </ol>
+    </li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>P5 — Diff 적용 (Diff &amp; WorkspaceEdit)</h1>
+<p class="subtitle">Phase 5 detailed plan · HunkComputer + DiffPresenter + HunkApprover + WorkspaceEditBuilder · 마스터 계획 <code>docs/plans/vscode-md-review-plan.md</code> 분해본 · 2026-05-15 작성</p>
+
+<!-- ============================== 1. 개요 ============================== -->
+<section id="sec-overview">
+  <h2>1. 개요</h2>
+
+  <p>본 phase는 P4 LLMOrchestrator가 반환한 수정 마크다운을 사용자에게 검토 가능한 형태로 제시하고, hunk 단위 승인을 거쳐 원본 <code>.md</code>에 반영하는 마지막 절반을 마무리한다. 핵심은 (1) 라인 단위 LCS diff로 hunk 분해, (2) <code>vscode.diff</code> 명령으로 좌우 비교 표시, (3) QuickPick UI로 hunk별 accept/reject 수집, (4) 승인된 hunk만 <code>WorkspaceEdit</code>으로 적용 — Human-in-the-loop 원칙(spec Principle 5)을 만족한다.</p>
+
+  <table>
+    <tbody>
+      <tr><th style="width: 18%">Goal</th><td>P4 응답 마크다운을 원본과 라인 단위 diff로 분해 → <code>vscode.diff</code> editor 좌우 표시 → QuickPick으로 hunk별 승인 → 승인된 hunk만 <code>WorkspaceEdit</code>으로 원본에 반영. 자동 적용 없음.</td></tr>
+      <tr><th>Side / Out</th><td>vsce 패키징(P6), platform-specific vsix(P6), inline accept 버튼(F-2 future), 다중 응답 큐(future).</td></tr>
+      <tr><th>Scope (in)</th><td>HunkComputer(line LCS), DiffPresenter(vscode.diff command 래퍼), HunkApprover(QuickPick UI), WorkspaceEditBuilder(applyEdit 호출), MarkdownReviewEditor submit 핸들러 P5 전환, P4 OutputChannel 표시 제거.</td></tr>
+      <tr><th>Scope (out)</th><td>inline accept button(F-2), word-level diff, 3-way merge, conflict 해결, 다중 동시 submit.</td></tr>
+      <tr><th>Key Deliverables</th><td>
+        <code>src/diff/HunkComputer.ts</code><br>
+        <code>src/diff/DiffPresenter.ts</code><br>
+        <code>src/diff/HunkApprover.ts</code><br>
+        <code>src/diff/WorkspaceEditBuilder.ts</code><br>
+        <code>src/diff/types.ts</code> (Hunk interface)<br>
+        <code>src/editor/MarkdownReviewEditor.ts</code> 갱신 (submit 핸들러 P5 전환)<br>
+        <code>test/diff/HunkComputer.test.ts</code><br>
+        <code>test/diff/HunkApprover.test.ts</code><br>
+        <code>test/diff/WorkspaceEditBuilder.test.ts</code>
+      </td></tr>
+      <tr><th>Dependencies</th><td>P4(LLMOrchestrator.submit이 SubmitResult.markdown 반환), VSCode API <code>vscode.diff</code> 명령 + <code>WorkspaceEdit</code> + <code>QuickPick</code>. 새 외부 npm 의존성 0건 (LCS 직접 구현).</td></tr>
+      <tr><th>Effort</th><td>1.5 작업일 (Day 1 HunkComputer + Presenter + Day 1.5 Approver + EditBuilder + wiring).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 2. RALPLAN-DR ============================== -->
+<section id="sec-dr">
+  <h2>2. RALPLAN-DR 요약</h2>
+
+  <section id="sec-dr-principles">
+    <h3>2.1 Principles (3~5)</h3>
+    <ol>
+      <li><strong>Human-in-the-loop은 양보 불가</strong> — 자동 적용은 spec Principle 5의 invariant이다. 어떤 단축도 사용자 명시 승인을 우회할 수 없다.</li>
+      <li><strong>의존성 최소화</strong> — P4의 cost-guard 정신을 P5에도 적용한다. line LCS는 50~80 LOC로 충분하므로 외부 diff 패키지 추가는 정당화되지 않는다.</li>
+      <li><strong>인덱스 안전성</strong> — 다중 hunk 적용 시 line index shift 회피. WorkspaceEdit은 라인 내림차순(아래부터 위로) 적용한다.</li>
+      <li><strong>VSCode native UX 우선</strong> — diff editor는 VSCode 내장 그대로 사용. hunk 승인은 QuickPick으로 보조(주 진입점).</li>
+      <li><strong>경계 검증</strong> — hunk 객체는 zod 기반 zero-trust(다만 내부 데이터 흐름이므로 schema는 가벼움), QuickPick 결과는 enum으로 정규화.</li>
+    </ol>
+  </section>
+
+  <section id="sec-dr-drivers">
+    <h3>2.2 Decision Drivers (Top 3)</h3>
+    <table>
+      <thead><tr><th>#</th><th>Driver</th><th>가중치</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td>D1</td><td>사용자 통제 보장</td><td>High</td><td>spec AC-11: hunk별 승인 없이 본문 변경 금지. 모든 적용은 명시 승인 경유.</td></tr>
+        <tr><td>D2</td><td>의존성 0건 유지</td><td>High</td><td>P4 cost-guard 정신 연장. line diff는 50~80 LOC 내장 구현 가능 → 외부 패키지 회피.</td></tr>
+        <tr><td>D3</td><td>테스트 용이성</td><td>Med</td><td>VSCode API는 mock으로 테스트 가능해야 함. DI(QuickPickBridge, EditApplier) 적용.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-options">
+    <h3>2.3 Viable Options (≥2)</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>설명</th><th>Pros</th><th>Cons</th><th>Driver 부합</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Option A</strong><br>외부 <code>diff</code> npm 패키지</td>
+          <td><code>diff</code>(MIT, jsdiff) 채택. <code>structuredPatch</code>로 hunk 생성, <code>applyPatch</code>로 적용.</td>
+          <td>검증된 라이브러리, word-level까지 확장 가능, hunk parsing 무료.</td>
+          <td>~50KB 추가, transitive 0건이긴 하나 cost-guard 정신 위반. line diff만 필요한 우리 use case 대비 과적.</td>
+          <td>D1 OK / D2 위반 / D3 OK</td>
+        </tr>
+        <tr>
+          <td><strong>Option B (선택)</strong><br>내장 LCS line-diff</td>
+          <td>LCS 길이 표(O(N·M)) → backtrack → line-level edit script → 인접한 edit을 hunk로 그룹핑.</td>
+          <td>의존성 0건, 50~80 LOC, 우리 use case에 fit. mocha 단위 테스트 단순.</td>
+          <td>word/char level 미지원. 단, AC는 line-level로 충분.</td>
+          <td>D1 OK / D2 OK / D3 OK</td>
+        </tr>
+        <tr>
+          <td><strong>Option C</strong><br>vscode.diff만 + 전부 적용/거부</td>
+          <td>hunk 분해 없이 사용자가 diff editor를 본 뒤 "전체 적용 / 전체 거부"만 선택.</td>
+          <td>코드 가장 단순(20 LOC).</td>
+          <td>AC-11(hunk별 승인) 위반. spec Principle 5의 정신과 어긋남.</td>
+          <td>D1 위반 → 즉시 기각</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-rationale">
+    <h3>2.4 선택 근거</h3>
+    <div class="callout ok">
+      <strong>채택: Option B (내장 LCS line-diff)</strong>
+      Option C는 D1을 정면 위반하므로 자동 기각. Option A는 D2(의존성 0건)와 충돌. Option B는 line LCS 50~80 LOC로 우리 use case에 정확히 부합하며 세 driver를 모두 만족한다. word-level diff는 P5 non-goal이므로 LCS의 line-level 한계는 영향 없음. 단, Hunk 인터페이스를 line-range + replacement string으로 정의하여 후일 word-level로 확장 가능한 추상화는 유지한다.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 3. Day-by-Day ============================== -->
+<section id="sec-days">
+  <h2>3. Day-by-Day Work Package</h2>
+
+  <section id="sec-day1" class="day-card">
+    <h3>Day 1 — HunkComputer + DiffPresenter (0.8d)</h3>
+    <div class="meta">목표 산출물: line-level LCS diff + vscode.diff 명령 발화 래퍼</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>src/diff/types.ts</code> — <code>Hunk</code> 인터페이스 정의: <code>{ id, beforeRange: {startLine, endLineExclusive}, beforeText, afterText, kind: 'replace'|'insert'|'delete' }</code></li>
+      <li><code>src/diff/HunkComputer.ts</code> — <code>compute(originalText, revisedText): Hunk[]</code>
+        <ul>
+          <li>입력 정규화: <code>\r\n</code> → <code>\n</code>, trailing newline 보존 여부 추적</li>
+          <li>line split: <code>text.split('\n')</code></li>
+          <li>LCS DP 표: <code>dp[i][j]</code> = common line count. 동일 라인은 strict equality.</li>
+          <li>backtrack → edit script (<code>'eq'|'add'|'del'</code> 시퀀스)</li>
+          <li>인접 add/del을 single hunk로 그룹핑 (eq에서 분리)</li>
+          <li>각 hunk에 stable id 부여 (인덱스 기반: <code>h0</code>, <code>h1</code> …)</li>
+        </ul>
+      </li>
+      <li><code>src/diff/DiffPresenter.ts</code> — <code>present(originalUri, revisedText, title): Promise&lt;{revisedUri}&gt;</code>
+        <ul>
+          <li>revised content를 untitled URI scheme(<code>untitled:</code>)으로 노출 (memory-backed)</li>
+          <li><code>vscode.workspace.openTextDocument({content, language: 'markdown'})</code> → 임시 doc 생성</li>
+          <li><code>vscode.commands.executeCommand('vscode.diff', originalUri, revisedDoc.uri, title)</code> 발화</li>
+          <li>VSCode가 알아서 좌(원본)/우(revised) 두 컬럼으로 표시</li>
+        </ul>
+      </li>
+      <li><code>test/diff/HunkComputer.test.ts</code> — 빈 입력 / 완전 일치 / 완전 교체 / 단일 라인 add / 단일 라인 del / replace + insert 혼합 / EOL 정규화 / trailing newline 보존 (8개 이상)</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>grep -rE 'class HunkComputer' src/diff/</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>grep -rE 'class DiffPresenter' src/diff/</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep "HunkComputer"</code> 8건 이상 통과</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit 0</li>
+      <li><input type="checkbox" disabled> <code>grep -rE '"diff"' package.json</code> 0건 (외부 diff 패키지 없음)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day15" class="day-card">
+    <h3>Day 1.5 — HunkApprover + WorkspaceEditBuilder (0.5d)</h3>
+    <div class="meta">목표 산출물: QuickPick hunk 승인 UI + 승인된 hunk만 WorkspaceEdit 적용</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>src/diff/HunkApprover.ts</code> — <code>askApprovals(hunks, bridge): Promise&lt;Set&lt;hunkId&gt;&gt;</code>
+        <ul>
+          <li>의존성 주입 가능한 <code>QuickPickBridge</code> 인터페이스: <code>showMultiPick(items, options): Promise&lt;items[]&gt;</code></li>
+          <li>각 hunk를 <code>QuickPickItem</code>으로 변환 (label = "H{n}: -{delLines} +{addLines}", detail = preview snippet)</li>
+          <li><code>canPickMany: true</code>로 다중 선택 → 승인된 id Set 반환</li>
+          <li>사용자가 취소(Escape) → empty Set 반환</li>
+          <li>VSCode 의존 부분은 <code>VSCodeQuickPickBridge</code>로 분리 → 단위 테스트는 stub bridge</li>
+        </ul>
+      </li>
+      <li><code>src/diff/WorkspaceEditBuilder.ts</code> — <code>buildAndApply(uri, hunks, approvedIds, applier): Promise&lt;{appliedCount}&gt;</code>
+        <ul>
+          <li>승인된 hunk만 필터링</li>
+          <li><strong>라인 내림차순 정렬</strong> (큰 startLine부터) → 인덱스 shift 방지</li>
+          <li>각 hunk에 대해 <code>WorkspaceEdit.replace(uri, Range(startLine, 0, endLine, 0), afterText)</code></li>
+          <li><code>applier(edit)</code>(=== <code>vscode.workspace.applyEdit</code>) 호출. boolean 반환</li>
+          <li>실패 시 throw, 성공 시 적용된 hunk 수 반환</li>
+        </ul>
+      </li>
+      <li><code>test/diff/HunkApprover.test.ts</code> — bridge stub으로 (a) 사용자가 일부 선택 → 해당 id 반환, (b) 취소 → empty (2개 이상)</li>
+      <li><code>test/diff/WorkspaceEditBuilder.test.ts</code> — fake WorkspaceEdit 객체 + applier spy로 (a) 내림차순 적용 순서 검증, (b) 빈 승인 → applier 호출 안 됨, (c) replace 인자 검증 (4개 이상)</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>grep -rE 'class HunkApprover' src/diff/</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>grep -rE 'class WorkspaceEditBuilder' src/diff/</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep "HunkApprover|WorkspaceEditBuilder"</code> 6건 이상 통과</li>
+      <li><input type="checkbox" disabled> <code>grep -nE 'sort\(.*startLine' src/diff/WorkspaceEditBuilder.ts</code> 1건 (내림차순 정렬 명시)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day15b" class="day-card">
+    <h3>Day 1.5+ — MarkdownReviewEditor 전환 + 회귀 (0.2d)</h3>
+    <div class="meta">목표 산출물: submit 핸들러를 OutputChannel 표시에서 P5 흐름으로 교체</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>src/editor/MarkdownReviewEditor.ts</code> 갱신
+        <ul>
+          <li>P4의 OutputChannel 표시 + showInformationMessage 흐름 제거</li>
+          <li>다음 흐름으로 교체: <code>orchestrator.submit</code> → <code>HunkComputer.compute(originalText, result.markdown)</code> → hunks 비어 있으면 "변경 없음" 토스트 후 return → <code>DiffPresenter.present</code> → <code>HunkApprover.askApprovals</code> → <code>WorkspaceEditBuilder.buildAndApply</code> → 적용 결과 토스트</li>
+          <li>에러 처리: 각 단계 try/catch, 사용자 메시지 한국어</li>
+          <li>OutputChannel에는 디버그 로그(uuid, hunk 수, 적용 수)만 남김</li>
+        </ul>
+      </li>
+      <li>전체 회귀: <code>npm run compile &amp;&amp; npm run compile:webview &amp;&amp; npm run lint &amp;&amp; npm test</code></li>
+      <li>한자 회귀: <code>grep -rE '[一-鿿]' src/ test/ docs/plans/p5/ media/</code> 0건</li>
+      <li>cost-guard 회귀: <code>npm run lint:cost-guard</code> exit 0</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>grep -nE 'HunkComputer|DiffPresenter|HunkApprover|WorkspaceEditBuilder' src/editor/MarkdownReviewEditor.ts</code> 각 1건 이상</li>
+      <li><input type="checkbox" disabled> <code>grep -nE 'OutputChannel.*append.*result\.markdown' src/editor/MarkdownReviewEditor.ts</code> 0건 (P4 표시 제거)</li>
+      <li><input type="checkbox" disabled> <code>npm test 2>&amp;1 | tail -3</code>에 <code>passing</code> 표기 + 실패 0건</li>
+      <li><input type="checkbox" disabled> <code>grep -rE '[一-鿿]' src/ test/ docs/plans/p5/</code> 0건</li>
+      <li><input type="checkbox" disabled> <code>npm run lint:cost-guard</code> exit 0</li>
+    </ul>
+  </section>
+</section>
+
+<!-- ============================== 4. Architecture Diagram ============================== -->
+<section id="sec-arch">
+  <h2>4. Architecture Diagram</h2>
+
+  <pre class="ascii">
+                    P3 [제출]                P4 LLMOrchestrator
+                       |                            |
+                       v                            v
+              CommentSession.submit           submit(text, comments)
+                       |                            |
+                       +---------- await -----------+
+                                    |
+                                    v
+                       SubmitResult { markdown, raw, uuid, durationMs }
+                                    |
+                                    v
+                     +-------- P5 진입점 (MarkdownReviewEditor) --------+
+                     |                                                  |
+                     v                                                  v
+            HunkComputer.compute(orig, revised)         output.append("hunks=%d", hunks.length)
+                     |
+                     v
+              Hunk[] { id, beforeRange, beforeText, afterText, kind }
+                     |
+                     +--------> hunks.length === 0 ?
+                     |                |
+                     |               yes
+                     |                v
+                     |       showInformationMessage("변경 없음")
+                     |                |
+                     |              return
+                     |
+                    no
+                     v
+            DiffPresenter.present(originalUri, revisedText, title)
+                     |
+                     v
+            vscode.commands.executeCommand('vscode.diff', ...)
+                     |
+                     v
+            [VSCode diff editor 열림: 좌(원본) | 우(revised)]
+                     |
+                     v
+            HunkApprover.askApprovals(hunks, bridge)
+                     |
+                     v
+            QuickPick (multi-pick, canPickMany=true)
+                     |
+                     v
+                 approvedIds: Set&lt;string&gt;
+                     |
+                     +--------> approvedIds.size === 0 ?
+                     |                |
+                     |               yes
+                     |                v
+                     |       showInformationMessage("적용된 hunk 없음")
+                     |                |
+                     |              return
+                     |
+                    no
+                     v
+            WorkspaceEditBuilder.buildAndApply(uri, hunks, approvedIds, applier)
+                     |
+                     v
+            sort hunks by startLine DESC → WorkspaceEdit.replace × N
+                     |
+                     v
+            vscode.workspace.applyEdit(edit) → boolean
+                     |
+                     v
+            showInformationMessage("N개 hunk 적용 완료")
+                     |
+                     v
+            [원본 .md 본문 dirty + 사용자가 Cmd+S로 저장]
+  </pre>
+</section>
+
+<!-- ============================== 5. Critical Code Specs ============================== -->
+<section id="sec-code">
+  <h2>5. Critical Code Specs</h2>
+
+  <section id="sec-code-hunk">
+    <h3>5.1 HunkComputer — line LCS</h3>
+<pre><span class="kw">export interface</span> <span class="typ">Hunk</span> {
+  id: <span class="typ">string</span>;
+  <span class="com">// 원본의 라인 범위 [startLine, endLineExclusive). endLineExclusive === startLine 이면 순수 insert.</span>
+  beforeRange: { startLine: <span class="typ">number</span>; endLineExclusive: <span class="typ">number</span> };
+  beforeText: <span class="typ">string</span>; <span class="com">// 원본 라인들을 \n으로 join (마지막 \n 미포함)</span>
+  afterText: <span class="typ">string</span>;  <span class="com">// 교체 라인들. afterText === '' 이면 순수 delete.</span>
+  kind: <span class="str">'replace'</span> | <span class="str">'insert'</span> | <span class="str">'delete'</span>;
+}
+
+<span class="kw">export class</span> <span class="typ">HunkComputer</span> {
+  <span class="fn">compute</span>(original: <span class="typ">string</span>, revised: <span class="typ">string</span>): <span class="typ">Hunk</span>[] {
+    <span class="com">// 1. EOL 정규화 (\r\n → \n). 입력 본문은 그대로 두고 비교용만 정규화.</span>
+    <span class="kw">const</span> origLines = <span class="fn">splitLines</span>(<span class="fn">normalizeEol</span>(original));
+    <span class="kw">const</span> revLines  = <span class="fn">splitLines</span>(<span class="fn">normalizeEol</span>(revised));
+
+    <span class="com">// 2. LCS DP. dp[i][j] = 두 prefix의 LCS 길이.</span>
+    <span class="kw">const</span> n = origLines.length, m = revLines.length;
+    <span class="kw">const</span> dp: <span class="typ">number</span>[][] = <span class="typ">Array</span>.from({length: n+1}, () =&gt; <span class="kw">new</span> <span class="typ">Array</span>(m+1).<span class="fn">fill</span>(0));
+    <span class="kw">for</span> (<span class="kw">let</span> i=1; i&lt;=n; i++)
+      <span class="kw">for</span> (<span class="kw">let</span> j=1; j&lt;=m; j++)
+        dp[i][j] = origLines[i-1] === revLines[j-1]
+          ? dp[i-1][j-1] + 1
+          : <span class="typ">Math</span>.<span class="fn">max</span>(dp[i-1][j], dp[i][j-1]);
+
+    <span class="com">// 3. backtrack → edit script ('eq' | 'add' | 'del')</span>
+    <span class="kw">const</span> ops: <span class="typ">EditOp</span>[] = [];
+    <span class="kw">let</span> i = n, j = m;
+    <span class="kw">while</span> (i&gt;0 || j&gt;0) {
+      <span class="kw">if</span> (i&gt;0 &amp;&amp; j&gt;0 &amp;&amp; origLines[i-1] === revLines[j-1]) { ops.<span class="fn">push</span>({k:<span class="str">'eq'</span>, a:origLines[i-1]}); i--; j--; }
+      <span class="kw">else if</span> (j&gt;0 &amp;&amp; (i===0 || dp[i][j-1] &gt;= dp[i-1][j])) { ops.<span class="fn">push</span>({k:<span class="str">'add'</span>, a:revLines[j-1]}); j--; }
+      <span class="kw">else</span> { ops.<span class="fn">push</span>({k:<span class="str">'del'</span>, a:origLines[i-1]}); i--; }
+    }
+    ops.<span class="fn">reverse</span>();
+
+    <span class="com">// 4. 인접한 add/del을 single hunk로 그룹핑.</span>
+    <span class="kw">return</span> <span class="fn">groupHunks</span>(ops);
+  }
+}
+
+<span class="com">// groupHunks: 'eq' 시퀀스를 경계로 add/del run을 hunk로 묶는다.</span>
+<span class="com">// 각 hunk에 stable id (h0, h1, ...) 부여. 원본 라인 인덱스 기준 startLine 계산.</span>
+<span class="kw">function</span> <span class="fn">groupHunks</span>(ops: <span class="typ">EditOp</span>[]): <span class="typ">Hunk</span>[] { <span class="com">/* ... */</span> }
+</pre>
+
+    <div class="callout info">
+      <strong>설계 의도</strong>
+      LCS는 O(N·M)이지만 검토용 마크다운은 일반적으로 ≤ 1000라인이므로 1ms 미만이다. 후일 word-level이 필요하면 LCS 결과의 add/del 페어를 word-LCS로 재분해할 수 있는 확장점이 있다 (현재는 line-level만).
+    </div>
+  </section>
+
+  <section id="sec-code-presenter">
+    <h3>5.2 DiffPresenter — vscode.diff 래퍼</h3>
+<pre><span class="kw">export interface</span> <span class="typ">DiffPresenterDeps</span> {
+  openTextDocument(options: { content: <span class="typ">string</span>; language: <span class="typ">string</span> }): <span class="typ">Promise</span>&lt;{ uri: <span class="typ">vscode.Uri</span> }&gt;;
+  executeCommand(command: <span class="typ">string</span>, ...args: <span class="typ">unknown</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">unknown</span>&gt;;
+}
+
+<span class="kw">export class</span> <span class="typ">DiffPresenter</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> deps: <span class="typ">DiffPresenterDeps</span>) {}
+
+  <span class="kw">async</span> <span class="fn">present</span>(originalUri: <span class="typ">vscode.Uri</span>, revisedText: <span class="typ">string</span>, title: <span class="typ">string</span>): <span class="typ">Promise</span>&lt;<span class="typ">vscode.Uri</span>&gt; {
+    <span class="com">// 1. 임시 untitled doc 생성 (메모리 기반, 디스크 미반영)</span>
+    <span class="kw">const</span> doc = <span class="kw">await</span> <span class="kw">this</span>.deps.<span class="fn">openTextDocument</span>({ content: revisedText, language: <span class="str">'markdown'</span> });
+    <span class="com">// 2. VSCode 내장 diff 명령 발화. 좌: 원본 (read-only는 보존), 우: revised untitled doc</span>
+    <span class="kw">await</span> <span class="kw">this</span>.deps.<span class="fn">executeCommand</span>(<span class="str">'vscode.diff'</span>, originalUri, doc.uri, title, { preview: <span class="kw">true</span> });
+    <span class="kw">return</span> doc.uri;
+  }
+}
+
+<span class="com">// 실 사용 시: new DiffPresenter({
+//   openTextDocument: (opts) =&gt; vscode.workspace.openTextDocument(opts),
+//   executeCommand: (cmd, ...args) =&gt; vscode.commands.executeCommand(cmd, ...args),
+// })</span>
+</pre>
+  </section>
+
+  <section id="sec-code-approver">
+    <h3>5.3 HunkApprover — QuickPick 다중 선택</h3>
+<pre><span class="kw">export interface</span> <span class="typ">QuickPickBridge</span> {
+  showMultiPick(
+    items: <span class="typ">QuickPickItemLite</span>[],
+    options: { title: <span class="typ">string</span>; placeHolder: <span class="typ">string</span> },
+  ): <span class="typ">Promise</span>&lt;<span class="typ">QuickPickItemLite</span>[] | <span class="typ">undefined</span>&gt;; <span class="com">// undefined = 취소</span>
+}
+
+<span class="kw">export interface</span> <span class="typ">QuickPickItemLite</span> {
+  id: <span class="typ">string</span>;
+  label: <span class="typ">string</span>;
+  detail?: <span class="typ">string</span>;
+  picked?: <span class="typ">boolean</span>;
+}
+
+<span class="kw">export class</span> <span class="typ">HunkApprover</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> bridge: <span class="typ">QuickPickBridge</span>) {}
+
+  <span class="kw">async</span> <span class="fn">askApprovals</span>(hunks: <span class="kw">readonly</span> <span class="typ">Hunk</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">Set</span>&lt;<span class="typ">string</span>&gt;&gt; {
+    <span class="kw">if</span> (hunks.length === 0) <span class="kw">return</span> <span class="kw">new</span> <span class="typ">Set</span>();
+    <span class="kw">const</span> items: <span class="typ">QuickPickItemLite</span>[] = hunks.<span class="fn">map</span>((h) =&gt; ({
+      id: h.id,
+      label: <span class="fn">formatHunkLabel</span>(h),   <span class="com">// "H1: L12~14 -2 +3"</span>
+      detail: <span class="fn">formatHunkPreview</span>(h), <span class="com">// "- old line\n+ new line" (truncated)</span>
+      picked: <span class="kw">true</span>,                <span class="com">// 기본 전체 선택 (안전한 default = 사용자가 거부할 것만 해제)</span>
+    }));
+    <span class="kw">const</span> selected = <span class="kw">await</span> <span class="kw">this</span>.bridge.<span class="fn">showMultiPick</span>(items, {
+      title: <span class="str">'적용할 hunk 선택'</span>,
+      placeHolder: <span class="str">'Space로 토글, Enter로 확정, Esc로 전체 취소'</span>,
+    });
+    <span class="kw">if</span> (!selected) <span class="kw">return</span> <span class="kw">new</span> <span class="typ">Set</span>();
+    <span class="kw">return</span> <span class="kw">new</span> <span class="typ">Set</span>(selected.<span class="fn">map</span>((s) =&gt; s.id));
+  }
+}
+</pre>
+
+    <div class="callout warn">
+      <strong>UX 결정: 기본 전체 선택</strong>
+      LLM 응답을 신뢰하는 default-on 정책. 사용자는 거부할 hunk만 토글 해제하면 된다. 반대로 default-off도 검토했으나 hunk가 많을 때(예: 10개) 모두 수동 체크하는 부담이 크다. 거부가 더 드문 작업으로 가정.
+    </div>
+  </section>
+
+  <section id="sec-code-edit">
+    <h3>5.4 WorkspaceEditBuilder — 내림차순 applyEdit</h3>
+<pre><span class="kw">export interface</span> <span class="typ">EditApplier</span> {
+  applyEdit(edit: <span class="typ">vscode.WorkspaceEdit</span>): <span class="typ">Thenable</span>&lt;<span class="typ">boolean</span>&gt;;
+}
+
+<span class="kw">export class</span> <span class="typ">WorkspaceEditBuilder</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> applier: <span class="typ">EditApplier</span>, <span class="kw">private readonly</span> editFactory: () =&gt; <span class="typ">vscode.WorkspaceEdit</span>) {}
+
+  <span class="kw">async</span> <span class="fn">buildAndApply</span>(
+    uri: <span class="typ">vscode.Uri</span>,
+    hunks: <span class="kw">readonly</span> <span class="typ">Hunk</span>[],
+    approvedIds: <span class="typ">ReadonlySet</span>&lt;<span class="typ">string</span>&gt;,
+  ): <span class="typ">Promise</span>&lt;{ appliedCount: <span class="typ">number</span> }&gt; {
+    <span class="kw">const</span> approved = hunks.<span class="fn">filter</span>((h) =&gt; approvedIds.<span class="fn">has</span>(h.id));
+    <span class="kw">if</span> (approved.length === 0) <span class="kw">return</span> { appliedCount: 0 };
+
+    <span class="com">// 핵심: 라인 내림차순 → 위쪽 hunk 적용 시 아래 hunk의 line index가 shift되지 않도록.</span>
+    <span class="kw">const</span> ordered = [...approved].<span class="fn">sort</span>((a, b) =&gt; b.beforeRange.startLine - a.beforeRange.startLine);
+
+    <span class="kw">const</span> edit = <span class="kw">this</span>.<span class="fn">editFactory</span>();
+    <span class="kw">for</span> (<span class="kw">const</span> h <span class="kw">of</span> ordered) {
+      <span class="kw">const</span> range = <span class="kw">new</span> <span class="typ">vscode.Range</span>(
+        h.beforeRange.startLine, 0,
+        h.beforeRange.endLineExclusive, 0,
+      );
+      <span class="com">// afterText는 EOL을 \n으로 통일했으므로 그대로 사용. 빈 문자열이면 순수 delete.</span>
+      <span class="kw">const</span> replacement = h.afterText.length &gt; 0 ? h.afterText + <span class="str">'\n'</span> : <span class="str">''</span>;
+      edit.<span class="fn">replace</span>(uri, range, replacement);
+    }
+
+    <span class="kw">const</span> ok = <span class="kw">await</span> <span class="kw">this</span>.applier.<span class="fn">applyEdit</span>(edit);
+    <span class="kw">if</span> (!ok) <span class="kw">throw new</span> <span class="typ">Error</span>(<span class="str">'applyEdit가 false를 반환'</span>);
+    <span class="kw">return</span> { appliedCount: approved.length };
+  }
+}
+</pre>
+  </section>
+
+  <section id="sec-code-editor">
+    <h3>5.5 MarkdownReviewEditor — submit 핸들러 P5 전환</h3>
+<pre>session.<span class="fn">attachSubmitHandler</span>(<span class="kw">async</span> (comments) =&gt; {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> result = <span class="kw">await</span> orchestrator.<span class="fn">submit</span>(document.<span class="fn">getText</span>(), comments);
+    <span class="kw">this</span>.output.<span class="fn">appendLine</span>(<span class="str">`[mdReview] submit ok uuid=${result.uuid} bytes=${result.markdown.length}`</span>);
+
+    <span class="kw">const</span> hunks = <span class="kw">this</span>.hunkComputer.<span class="fn">compute</span>(document.<span class="fn">getText</span>(), result.markdown);
+    <span class="kw">this</span>.output.<span class="fn">appendLine</span>(<span class="str">`[mdReview] hunks=${hunks.length}`</span>);
+    <span class="kw">if</span> (hunks.length === 0) {
+      <span class="kw">await</span> vscode.window.<span class="fn">showInformationMessage</span>(<span class="str">'mdReview: 변경 사항이 없사옵니다.'</span>);
+      <span class="kw">return</span>;
+    }
+
+    <span class="kw">const</span> presenter = <span class="kw">this</span>.<span class="fn">makeDiffPresenter</span>();
+    <span class="kw">await</span> presenter.<span class="fn">present</span>(document.uri, result.markdown, <span class="str">`mdReview: ${<span class="fn">basename</span>(document.uri.fsPath)}`</span>);
+
+    <span class="kw">const</span> approver = <span class="kw">this</span>.<span class="fn">makeHunkApprover</span>();
+    <span class="kw">const</span> approved = <span class="kw">await</span> approver.<span class="fn">askApprovals</span>(hunks);
+    <span class="kw">if</span> (approved.size === 0) {
+      <span class="kw">await</span> vscode.window.<span class="fn">showInformationMessage</span>(<span class="str">'mdReview: 적용된 hunk가 없사옵니다.'</span>);
+      <span class="kw">return</span>;
+    }
+
+    <span class="kw">const</span> builder = <span class="kw">this</span>.<span class="fn">makeWorkspaceEditBuilder</span>();
+    <span class="kw">const</span> { appliedCount } = <span class="kw">await</span> builder.<span class="fn">buildAndApply</span>(document.uri, hunks, approved);
+    <span class="kw">await</span> vscode.window.<span class="fn">showInformationMessage</span>(
+      <span class="str">`mdReview: ${appliedCount}개 hunk를 본문에 반영하였사옵니다. 저장(Cmd+S)을 잊지 마시오.`</span>,
+    );
+  } <span class="kw">catch</span> (e) {
+    <span class="kw">const</span> msg = e <span class="kw">instanceof</span> <span class="typ">Error</span> ? e.message : <span class="typ">String</span>(e);
+    <span class="kw">await</span> vscode.window.<span class="fn">showErrorMessage</span>(<span class="str">`mdReview submit 실패: ${msg}`</span>);
+  }
+});
+</pre>
+  </section>
+</section>
+
+<!-- ============================== 6. ADR 운영화 ============================== -->
+<section id="sec-adr">
+  <h2>6. ADR 운영화</h2>
+
+  <table>
+    <thead><tr><th>ADR 항목</th><th>master 결정</th><th>P5 운영화</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>P5: Human-in-the-loop 적용</td>
+        <td>spec Principle 5 + AC-11. LLM 응답 자동 적용 금지.</td>
+        <td>HunkApprover가 적용 전 필수 단계. <code>askApprovals</code>가 empty 반환 시 <code>buildAndApply</code> 호출되지 않음. 코드 경로상 우회 불가.</td>
+      </tr>
+      <tr>
+        <td>P5: VSCode 내장 diff 활용</td>
+        <td>새 diff editor 구현 금지. <code>vscode.diff</code> 명령 그대로 사용.</td>
+        <td>DiffPresenter는 명령 발화 래퍼일 뿐. revised 본문은 untitled URI scheme(메모리 기반)으로 디스크 부작용 없음.</td>
+      </tr>
+      <tr>
+        <td>P5: hunk 단위 부분 수용</td>
+        <td>AC-11. 전체-aut-all/none이 아닌 hunk별 토글.</td>
+        <td>QuickPick <code>canPickMany: true</code>로 hunk별 다중 선택. 적용은 WorkspaceEditBuilder의 hunk-by-hunk replace.</td>
+      </tr>
+      <tr>
+        <td>R-10 native UX 한계</td>
+        <td>quick-pick 보조 UI를 일급 설계로 채택.</td>
+        <td>HunkApprover가 주 진입점(ad-hoc shim 아님). 향후 inline accept button(F-2)로 승격 검토 가능한 인터페이스(<code>QuickPickBridge</code>) 유지.</td>
+      </tr>
+      <tr>
+        <td>의존성 0건 정책</td>
+        <td>P4 cost-guard 정신 연장. 새 외부 패키지 회피.</td>
+        <td>line LCS를 50~80 LOC 내장 구현. package.json dependencies 변경 0건.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 7. Diff 라이브러리 선택 근거 ============================== -->
+<section id="sec-diff-lib">
+  <h2>7. Diff 라이브러리 선택 근거 (추가 ADR)</h2>
+
+  <table>
+    <thead><tr><th>항목</th><th>외부 <code>diff</code> (jsdiff)</th><th>내장 LCS (선택)</th></tr></thead>
+    <tbody>
+      <tr><td>코드 크기</td><td>~50KB (transitive 0)</td><td>~80 LOC</td></tr>
+      <tr><td>line-level diff</td><td>✓ <code>diffLines</code></td><td>✓ LCS 기반</td></tr>
+      <tr><td>word-level diff</td><td>✓ <code>diffWords</code></td><td>✗ (P5 non-goal)</td></tr>
+      <tr><td>hunk 자동 생성</td><td>✓ <code>structuredPatch</code></td><td>인접 add/del 그룹핑 (~20 LOC)</td></tr>
+      <tr><td>EOL 정규화</td><td>옵션 제공</td><td>수동 (<code>normalizeEol</code> 헬퍼)</td></tr>
+      <tr><td>D2(의존성 0건)</td><td>위반</td><td>준수</td></tr>
+      <tr><td>유지보수 부담</td><td>외부 변경에 노출</td><td>내부 통제 가능</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <strong>결단</strong>
+    P5의 실제 요구는 <em>line-level diff + hunk별 적용</em>이며 word-level은 명시적 non-goal이다. 외부 라이브러리는 80% unused capability를 안고 가는 셈이다. 80 LOC LCS는 mocha로 단위 테스트 가능하고 우리 use case와 1:1 fit이다. 향후 word-level 요구가 발생하면 그 때 jsdiff 도입 또는 LCS의 add/del 페어를 word-LCS로 재귀 분해하여 점진적 확장 가능.
+  </div>
+</section>
+
+<!-- ============================== 8. AC ============================== -->
+<section id="sec-ac">
+  <h2>8. Acceptance Criteria</h2>
+
+  <table>
+    <thead><tr><th>#</th><th>기준</th><th>검증 절차</th><th>검증 자료</th><th>통과</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>AC-10</td>
+        <td>P4 응답 마크다운이 <code>vscode.diff</code>로 원본과 나란히 표시된다</td>
+        <td>F5 → .md 파일 → 코멘트 1개 추가 → 제출 → mock 응답에 fenced markdown → diff editor 좌(원본)/우(revised) 두 컬럼 자동 표시</td>
+        <td>수동, 스크린샷 (smoke 체크리스트에 추가)</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-11</td>
+        <td>hunk별 승인 후 WorkspaceEdit으로 원본 .md에 부분 반영</td>
+        <td>응답이 2개 hunk를 만드는 시나리오 → QuickPick에서 1개만 체크 → 해당 hunk만 원본에 반영 → 본문 dirty 상태</td>
+        <td>수동, 텍스트 diff 확인</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-11a</td>
+        <td>전체 hunk 거부 시 본문 변경 없음</td>
+        <td>QuickPick 취소(Esc) → 토스트 "적용된 hunk가 없사옵니다" → 원본 본문 unchanged</td>
+        <td>수동 + 단위 테스트 <code>WorkspaceEditBuilder.test.ts</code> "빈 승인 → applier 호출 안 됨"</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-11b</td>
+        <td>다중 hunk 적용 시 line index shift 회피</td>
+        <td>응답이 line 5, line 20, line 100에 hunk 3개를 만드는 시나리오 → 3개 모두 승인 → 모두 정확한 위치에 반영</td>
+        <td>단위 테스트 <code>WorkspaceEditBuilder.test.ts</code> "내림차순 적용 순서 검증" (큰 startLine부터)</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-12</td>
+        <td>변경 없는 응답 처리</td>
+        <td>응답이 원본과 동일 → hunks.length === 0 → 토스트 "변경 사항이 없사옵니다" → diff editor 미오픈</td>
+        <td>단위 테스트 <code>HunkComputer.test.ts</code> "완전 일치 → []" + 수동</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-13</td>
+        <td>외부 diff npm 의존성 0건</td>
+        <td><code>grep -E '"diff"|"jsdiff"' package.json</code> 0건</td>
+        <td>자동, lint 단계에서 보강 가능</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-14</td>
+        <td>cost-guard 회귀 없음</td>
+        <td><code>npm run lint:cost-guard</code> exit 0</td>
+        <td>자동</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-15</td>
+        <td>한자 회귀 없음</td>
+        <td><code>grep -rE '[一-鿿]' src/ test/ docs/plans/p5/ media/</code> 0건</td>
+        <td>자동</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 9. Risks ============================== -->
+<section id="sec-risks">
+  <h2>9. Risks &amp; Mitigations</h2>
+
+  <table>
+    <thead><tr><th>#</th><th>위험</th><th>가능성</th><th>영향</th><th>완화</th><th>책임 phase</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>R5-1</td>
+        <td>EOL 차이로 hunk 잘못 분해 (Windows <code>\r\n</code> 원본 + LLM의 <code>\n</code> 응답)</td>
+        <td>중</td>
+        <td>중</td>
+        <td><code>normalizeEol</code> 헬퍼로 비교만 정규화. 출력 본문은 OS native EOL 보존하지 않고 <code>\n</code> 통일 (revised는 LLM에서 받은 그대로). 향후 사용자 옵션화 검토.</td>
+        <td>P5 Day 1</td>
+      </tr>
+      <tr>
+        <td>R5-2</td>
+        <td>다중 hunk applyEdit 인덱스 shift</td>
+        <td>중</td>
+        <td>높음</td>
+        <td>WorkspaceEditBuilder가 <code>startLine</code> 내림차순 정렬 후 적용. 단위 테스트로 회귀 방지 (<code>"내림차순 적용 순서 검증"</code>).</td>
+        <td>P5 Day 1.5</td>
+      </tr>
+      <tr>
+        <td>R5-3</td>
+        <td>QuickPick 취소를 사용자가 "전체 적용"으로 오해</td>
+        <td>중</td>
+        <td>중</td>
+        <td>placeHolder에 "Esc로 전체 취소" 명시. Esc → empty Set → 토스트 "적용된 hunk가 없사옵니다"로 명확한 피드백. 본문 unchanged.</td>
+        <td>P5 Day 1.5</td>
+      </tr>
+      <tr>
+        <td>R5-4</td>
+        <td>사용자가 diff editor만 닫고 QuickPick은 무시 → 본문 변경 없이 종료</td>
+        <td>낮</td>
+        <td>낮</td>
+        <td>QuickPick이 main control. diff editor 닫혀도 QuickPick 살아 있음. 사용자가 다시 QuickPick에 응답하면 정상 흐름. 의도된 동작.</td>
+        <td>P5 Day 1.5</td>
+      </tr>
+      <tr>
+        <td>R5-5</td>
+        <td>매우 큰 응답(>10,000 라인)에서 LCS O(N·M) 성능 저하</td>
+        <td>낮</td>
+        <td>낮</td>
+        <td>마크다운 리뷰 use case는 ≤ 1000라인. 10,000라인이면 100MB DP 표 → 메모리 압박. 현재는 cap 없음. P6에서 입력 길이 가드 검토.</td>
+        <td>P6 follow-up</td>
+      </tr>
+      <tr>
+        <td>R5-6</td>
+        <td>WorkspaceEdit이 readonly 파일에 실패</td>
+        <td>낮</td>
+        <td>낮</td>
+        <td><code>applyEdit</code>이 false 반환 → throw → catch → showErrorMessage. 사용자가 파일 readonly 해제 후 재시도.</td>
+        <td>P5 Day 1.5+</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 10. Exit Gate ============================== -->
+<section id="sec-exit">
+  <h2>10. Exit Gate to P6 (Packaging)</h2>
+
+  <ul class="exit-criteria">
+    <li><input type="checkbox" disabled> <code>npm run compile &amp;&amp; npm run compile:webview</code> exit 0</li>
+    <li><input type="checkbox" disabled> <code>npm run lint</code> exit 0 (cost-guard 포함)</li>
+    <li><input type="checkbox" disabled> <code>npm test 2>&amp;1 | tail -3</code>에 "passing" 명시, 실패 0건</li>
+    <li><input type="checkbox" disabled> <code>grep -rE '[一-鿿]' src/ test/ docs/plans/p5/</code> 0건</li>
+    <li><input type="checkbox" disabled> <code>grep -E '"diff"|"jsdiff"' package.json</code> 0건 (의존성 0건 유지)</li>
+    <li><input type="checkbox" disabled> <code>src/diff/</code> 디렉터리에 5개 모듈 존재 (HunkComputer, DiffPresenter, HunkApprover, WorkspaceEditBuilder, types)</li>
+    <li><input type="checkbox" disabled> <code>test/diff/</code>에 최소 14건 테스트 통과</li>
+    <li><input type="checkbox" disabled> MarkdownReviewEditor 갱신본에 P5 4개 모듈 import 명시</li>
+    <li><input type="checkbox" disabled> P3 manual smoke 체크리스트에 AC-10 / AC-11 / AC-11a 항목 추가</li>
+    <li><input type="checkbox" disabled> P4 OutputChannel 표시 + showInformationMessage("diff 표시는 P5에서 활성화") 흐름 완전 제거</li>
+  </ul>
+
+  <div class="callout info">
+    <strong>P6 진입 조건</strong>
+    위 10개 조건 모두 통과 시 P6 — Packaging(vsce + platform-specific vsix)으로 진군. P0.5 Provider Spike는 P6와 병렬 가능 (사용자 sudo 필요한 tcpdump 단계).
+  </div>
+</section>
+
+<!-- ============================== 11. 부록 ============================== -->
+<section id="sec-appendix">
+  <h2>11. 부록</h2>
+
+  <section id="sec-appendix-a">
+    <h3>A. settings / 환경</h3>
+    <p>P5는 신규 settings 항목을 추가하지 않는다. 기존 P2/P3/P4 settings(persistenceBackend, defaultProvider, sentinelTimeoutMs, providers, responseQuietPeriodMs) 그대로 사용.</p>
+
+    <p><strong>향후 검토 가능한 settings (P5 범위 외):</strong></p>
+    <ul>
+      <li><code>mdReview.diff.defaultPick</code>: <code>'all'</code> | <code>'none'</code> — QuickPick 기본 선택 정책 (현재 hard-coded all)</li>
+      <li><code>mdReview.diff.maxLines</code>: number — LCS 입력 라인 상한 (R5-5 가드)</li>
+    </ul>
+  </section>
+
+  <section id="sec-appendix-b">
+    <h3>B. 참고문헌</h3>
+    <ul>
+      <li>VSCode API <code>vscode.diff</code> 명령 — <code>vscode.commands.executeCommand('vscode.diff', left, right, title, options)</code></li>
+      <li>VSCode API <code>WorkspaceEdit</code> — <code>edit.replace(uri, range, newText)</code> + <code>workspace.applyEdit(edit)</code></li>
+      <li>VSCode API <code>QuickPick</code> — <code>window.showQuickPick(items, { canPickMany: true, placeHolder, title })</code></li>
+      <li>Hunt &amp; McIlroy(1976), "An Algorithm for Differential File Comparison" — LCS 기반 line diff 원조</li>
+      <li>spec Principle 5 — <code>.omc/specs/deep-interview-vscode-md-review.md</code> §35 "Human-in-the-loop for application"</li>
+      <li>master plan §P5 — <code>docs/plans/vscode-md-review-plan.md</code> "Diff 적용 (Diff &amp; WorkspaceEdit)" 섹션</li>
+    </ul>
+  </section>
+</section>
+
+</main>
+</div>
+</body>
+</html>

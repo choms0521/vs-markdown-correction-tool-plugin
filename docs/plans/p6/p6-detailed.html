@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P6 상세 계획서 — Packaging & Distribution (DELIBERATE)</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #d8d8d8;
+    --accent: #1f6feb;
+    --warn: #b97f00;
+    --danger: #b3261e;
+    --ok: #1e7f3a;
+    --code-bg: #f5f6f8;
+    --table-stripe: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  aside.toc {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--border); padding: 24px 18px; background: #fbfbfb;
+  }
+  aside.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 10px; }
+  aside.toc ol { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+  aside.toc ol li { margin: 4px 0; }
+  aside.toc ol li a { color: var(--fg); text-decoration: none; padding: 4px 6px; display: block; border-radius: 4px; }
+  aside.toc ol li a:hover { background: #eef2f7; color: var(--accent); }
+  aside.toc ol li ol { padding-left: 12px; margin-top: 2px; font-size: 12px; color: var(--muted); }
+  main { padding: 32px 40px 80px; max-width: 1100px; }
+  main h1 { font-size: 26px; margin: 0 0 6px; }
+  main .subtitle { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+  main h2 { font-size: 20px; border-bottom: 2px solid var(--border); padding-bottom: 6px; margin-top: 40px; }
+  main h3 { font-size: 16px; margin-top: 24px; }
+  main h4 { font-size: 14px; margin-top: 18px; color: var(--muted); }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.55; }
+  pre .kw { color: #b04bdb; } pre .str { color: #1e7f3a; } pre .com { color: #8a8a8a; font-style: italic; }
+  pre .num { color: #b97f00; } pre .typ { color: #1f6feb; } pre .fn { color: #b97f00; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  tbody tr:nth-child(odd) td { background: var(--table-stripe); }
+  .day-card { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 6px; padding: 18px 22px; margin: 18px 0; background: #fcfcfd; }
+  .day-card h3 { margin-top: 0; color: var(--accent); }
+  .day-card .meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .callout { border-radius: 6px; padding: 12px 16px; margin: 12px 0; border-left: 4px solid var(--accent); background: #eff5fd; }
+  .callout.info { border-left-color: var(--accent); background: #eff5fd; }
+  .callout.warn { border-left-color: var(--warn); background: #fdf6e7; }
+  .callout.danger { border-left-color: var(--danger); background: #fdecea; }
+  .callout.ok { border-left-color: var(--ok); background: #eaf6ee; }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .ascii { background: #1a1f29; color: #e6e6e6; padding: 18px 20px; border-radius: 6px; overflow-x: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #e9eef5; color: var(--fg); margin-right: 4px; }
+  .tag.warn { background: #fdf0d0; color: var(--warn); }
+  .tag.danger { background: #fbd9d6; color: var(--danger); }
+  .tag.ok { background: #d8eedf; color: var(--ok); }
+  ul.exit-criteria { list-style: none; padding-left: 0; }
+  ul.exit-criteria li { margin: 6px 0; padding-left: 22px; position: relative; }
+  ul.exit-criteria li input[type="checkbox"] { position: absolute; left: 0; top: 4px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    pre, table, .day-card, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차 (DELIBERATE)</h2>
+  <ol>
+    <li><a href="#sec-overview">1. 개요</a></li>
+    <li><a href="#sec-dr">2. RALPLAN-DR 요약</a>
+      <ol>
+        <li><a href="#sec-dr-principles">2.1 Principles</a></li>
+        <li><a href="#sec-dr-drivers">2.2 Decision Drivers</a></li>
+        <li><a href="#sec-dr-options">2.3 Viable Options</a></li>
+        <li><a href="#sec-dr-rationale">2.4 선택 근거</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-premortem">3. Pre-mortem (DELIBERATE)</a></li>
+    <li><a href="#sec-days">4. Day-by-Day Work Package</a>
+      <ol>
+        <li><a href="#sec-day1">Day 1 — Metadata + Docs + 1차 vsix</a></li>
+        <li><a href="#sec-day15">Day 1.5 — Lifecycle + OS Guard</a></li>
+        <li><a href="#sec-day2">Day 2 — CI Matrix + Smoke</a></li>
+        <li><a href="#sec-day2v">Day 2 verify — AC 검증</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-arch">5. Architecture Diagram (CI Matrix)</a></li>
+    <li><a href="#sec-code">6. Critical Specs</a>
+      <ol>
+        <li><a href="#sec-code-pkg">6.1 package.json 메타</a></li>
+        <li><a href="#sec-code-actions">6.2 GitHub Actions matrix</a></li>
+        <li><a href="#sec-code-activate">6.3 activate + OS guard</a></li>
+        <li><a href="#sec-code-vscodeignore">6.4 .vscodeignore</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-adr">7. ADR 운영화</a></li>
+    <li><a href="#sec-tests">8. 확장 Test Plan (DELIBERATE)</a></li>
+    <li><a href="#sec-ac">9. Acceptance Criteria</a></li>
+    <li><a href="#sec-risks">10. Risks &amp; Mitigations</a></li>
+    <li><a href="#sec-exit">11. Exit Gate to Future-features</a></li>
+    <li><a href="#sec-appendix">12. 부록</a>
+      <ol>
+        <li><a href="#sec-appendix-a">A. vsce 명령 모음</a></li>
+        <li><a href="#sec-appendix-b">B. 11 lifecycle events</a></li>
+        <li><a href="#sec-appendix-c">C. 참고문헌</a></li>
+      </ol>
+    </li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>P6 — Packaging &amp; Distribution (DELIBERATE)</h1>
+<p class="subtitle">Phase 6 detailed plan · vsce platform-specific vsix + GitHub Actions matrix + lifecycle observability · 마스터 계획 <code>docs/plans/vscode-md-review-plan.md</code> 분해본 · 2026-05-15 작성</p>
+
+<!-- ============================== 1. 개요 ============================== -->
+<section id="sec-overview">
+  <h2>1. 개요</h2>
+
+  <p>본 phase는 마지막 단계로, P0~P5까지 완성된 plugin을 <code>vsce</code> CLI로 platform-specific <code>.vsix</code> 패키지로 빌드하고 GitHub Actions matrix workflow로 5개 plat의 일괄 빌드 + smoke 검증을 자동화한다. node-pty native binary가 plat별로 다르므로 단일 vsix가 아닌 <strong>5개 vsix (darwin-arm64 / darwin-x64 / linux-x64 / linux-arm64 / win32-x64)</strong>를 산출한다. DELIBERATE 모드로 진행하여 pre-mortem 3 시나리오 + 확장 test plan을 명시한다 (P1과 동일 high-risk surface).</p>
+
+  <table>
+    <tbody>
+      <tr><th style="width: 18%">Goal</th><td>vsce platform-specific vsix 5개 산출 + 각 vsix에 node-pty native binary 포함 검증 + GitHub Actions matrix CI 통과 + smoke test (@vscode/test-electron) + macOS GUI launch 함정 README 명시.</td></tr>
+      <tr><th>Side / Out</th><td>marketplace publish (별도 권한), GitHub Releases 자동화 (P6+1 ticket), icon 디자인 (placeholder OK), 다국어 README (영어 단일).</td></tr>
+      <tr><th>Scope (in)</th><td>@vscode/vsce devDep, package.json marketplace 메타, README/CHANGELOG/LICENSE, .vscodeignore 정비, activate/deactivate 로깅 11 events, Windows 1809+ OS 가드, GitHub Actions matrix workflow, vsce package 5개 target, vsix 내 node-pty.node 포함 검증, npm test 회귀.</td></tr>
+      <tr><th>Scope (out)</th><td>marketplace 실제 게시(publisher 인증 별도), icon 디자인, F-1~F-5 future features, P0.5 sudo tcpdump (별도 협조).</td></tr>
+      <tr><th>Key Deliverables</th><td>
+        <code>package.json</code> — marketplace 메타 + scripts 확장<br>
+        <code>README.md</code> (영어, macOS GUI launch 함정 명시)<br>
+        <code>CHANGELOG.md</code> (Keep a Changelog)<br>
+        <code>LICENSE</code> (MIT)<br>
+        <code>.vscodeignore</code> 정비<br>
+        <code>.github/workflows/build.yml</code> (matrix 5 plat)<br>
+        <code>src/extension.ts</code> 갱신 (lifecycle 로깅 + OS 가드)
+      </td></tr>
+      <tr><th>Dependencies</th><td>P0~P5 모두 통과. 새 devDep: <code>@vscode/vsce</code>. node-pty는 이미 P1에 설치됨.</td></tr>
+      <tr><th>Effort</th><td>1.5~2.0 작업일 (Day 1 메타+문서+1차 vsix / Day 1.5 lifecycle+OS / Day 2 CI matrix + 검증).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 2. RALPLAN-DR ============================== -->
+<section id="sec-dr">
+  <h2>2. RALPLAN-DR 요약</h2>
+
+  <section id="sec-dr-principles">
+    <h3>2.1 Principles (4~5)</h3>
+    <ol>
+      <li><strong>Platform abi 고정</strong> — node-pty native binary는 Electron 버전과 정확히 일치해야 한다. vsce platform-specific으로 abi mismatch를 사전 차단. install-time rebuild는 user 환경 오염 위험으로 금지.</li>
+      <li><strong>설치 단순성</strong> — 사용자는 단일 <code>.vsix</code> 파일 하나만 받아 설치. 별도 npm install, 별도 빌드 도구, 별도 권한 요구 없음.</li>
+      <li><strong>cost-guard 정신 유지</strong> — P4의 이중 화이트리스트는 패키지 빌드 단계에서도 회귀 검증. cost-guard 정적 grep을 CI에 박는다.</li>
+      <li><strong>관측성 우선</strong> — 11 lifecycle events를 OutputChannel에 구조화 로깅하여 사용자/개발자가 production 문제 진단 가능. silent failure 0건.</li>
+      <li><strong>한국어/한자 정책 일관</strong> — 사용자 visible 문자열은 한국어, 코드/문서/메타데이터는 영어. 한자 일절 금지. CI grep으로 회귀 차단.</li>
+    </ol>
+  </section>
+
+  <section id="sec-dr-drivers">
+    <h3>2.2 Decision Drivers (Top 3)</h3>
+    <table>
+      <thead><tr><th>#</th><th>Driver</th><th>가중치</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td>D1</td><td>설치 실패 0%</td><td>Critical</td><td>macOS arm64 user 0% 설치 실패 (시나리오 P6-A). vsix abi mismatch는 fatal.</td></tr>
+        <tr><td>D2</td><td>cost-guard 회귀 0건</td><td>Critical</td><td>사용자가 settings로 <code>-p</code> 우회를 못 박는 것이 본 plugin 존재 의의. 정적 grep + 런타임 검증 양쪽 모두 회귀 차단.</td></tr>
+        <tr><td>D3</td><td>CI 자동화</td><td>High</td><td>5 plat 수동 빌드는 hum error 누적. GitHub Actions matrix로 push tag → 5 vsix 산출.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-options">
+    <h3>2.3 Viable Options (≥2)</h3>
+    <table>
+      <thead><tr><th>옵션</th><th>설명</th><th>Pros</th><th>Cons</th><th>Driver 부합</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Option A (선택)</strong><br>vsce platform-specific vsix</td>
+          <td><code>vsce package --target &lt;plat&gt;</code>로 5 vsix 산출. CI matrix가 plat별 native build 후 vsix 생성.</td>
+          <td>abi 고정 → 설치 실패 0%. user 환경 무오염. marketplace platform-specific 표준.</td>
+          <td>5 vsix 관리 부담. CI matrix 비용.</td>
+          <td>D1 OK / D2 OK / D3 OK</td>
+        </tr>
+        <tr>
+          <td><strong>Option B</strong><br>단일 vsix + install-time <code>npm rebuild</code></td>
+          <td>universal vsix 1개. activate 시점에 node-pty rebuild trigger.</td>
+          <td>vsix 1개로 단순.</td>
+          <td>user 환경에 build toolchain 요구 (Xcode CLT / VS Build Tools / gcc). user 환경 오염 + 실패율 ↑.</td>
+          <td>D1 위반 (build 도구 없는 user 실패) → 기각</td>
+        </tr>
+        <tr>
+          <td><strong>Option C</strong><br>marketplace publish + auto-update</td>
+          <td>vsce publish로 marketplace 자동 배포. user는 search/install.</td>
+          <td>UX 최상.</td>
+          <td>publisher 인증 + brand 검토 + organization 등록 등 별도 절차. P6 범위 초과.</td>
+          <td>P6 scope 초과 → 후속 ticket으로 분리</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-rationale">
+    <h3>2.4 선택 근거</h3>
+    <div class="callout ok">
+      <strong>채택: Option A (vsce platform-specific vsix)</strong>
+      D1(설치 실패 0%)가 critical이므로 abi 고정이 불가피하다. Option B는 user 환경 오염으로 D1을 정면 위반. Option C는 P6 scope 초과로 후속 ticket. Option A는 5 vsix 관리 부담이 있지만 CI matrix로 자동화 가능하며 marketplace 표준 패턴이므로 향후 Option C(publish)로 이행 시 그대로 호환된다.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 3. Pre-mortem ============================== -->
+<section id="sec-premortem">
+  <h2>3. Pre-mortem (DELIBERATE) — 3 시나리오</h2>
+
+  <p>P6는 high-risk 표면이다. 출하 후 사용자가 마주칠 가능성이 높은 실패 시나리오를 사전에 정의하고 대응책을 plan에 박아둔다.</p>
+
+  <div class="callout danger">
+    <strong>시나리오 P6-A — macOS arm64 user dlopen 실패</strong>
+    macOS Apple Silicon 사용자가 plugin 설치 후 첫 submit 시 <code>node-pty.node dlopen failed</code>로 spawn 실패. 원인: Electron abi와 prebuilt node-pty binary 불일치. <br>
+    <strong>대응</strong>: (1) <code>vsce package --target darwin-arm64</code>으로 plat 한정 빌드 → 정확한 abi binary만 동봉. (2) CI matrix에 darwin-arm64 runner 포함하여 install + smoke 자동 검증. (3) install-time rebuild hook은 user 환경 오염 + 실패율 ↑이므로 명시적으로 사용 안 함.
+  </div>
+
+  <div class="callout danger">
+    <strong>시나리오 P6-B — Windows Win10 1809 미만에서 ConPTY 실패</strong>
+    Windows 사용자(특히 Win10 1803/1709 enterprise)가 spawn 시 ConPTY API not found 에러. 원인: ConPTY는 Win10 1809+. <br>
+    <strong>대응</strong>: (1) <code>package.json</code> README에 "Windows 10 1809+ 또는 Win11" 명시. (2) <code>activate</code> 시점에 <code>os.release()</code>으로 OS 버전 체크. Win10 1809 미만이면 <code>showErrorMessage</code>로 친절한 안내(설치는 차단하지 않으나 동작 보장 안 됨 안내). (3) win32-x64 CI runner를 Windows Server 2022 (1809 호환) 사용.
+  </div>
+
+  <div class="callout danger">
+    <strong>시나리오 P6-C — 사용자 settings로 cost-guard 우회</strong>
+    사용자가 <code>mdReview.providers.claude.args = ["-p"]</code> 같은 직접 settings 주입으로 비대화형 호출 강제, 결과적으로 종량 과금 발생. <br>
+    <strong>대응</strong>: (1) P4의 이중 화이트리스트(<code>ALLOWED_COMMAND_BASENAMES</code> + <code>ALLOWED_ARGS</code>)가 런타임에 args를 검증 → throw + OutputChannel에 <code>args-whitelist-violation</code> 구조화 로깅. (2) CI에 <code>grep -rE '"-p"|"--print"' src/</code> 정적 검증(cost-guard). (3) README에 "args 화이트리스트로 enforced, 우회 불가" 명시.
+  </div>
+
+  <div class="callout warn">
+    <strong>시나리오 P6-D (추가) — macOS GUI launch zshrc 미로드</strong>
+    macOS user가 Finder/Dock 더블클릭으로 VSCode 실행 → login shell이 아니라 <code>~/.zshrc</code>의 PATH가 미로드 → <code>claude</code> 바이너리 미발견 → <code>ENOENT</code>. <br>
+    <strong>대응</strong>: README의 "macOS GUI launch" 섹션에 (1) settings에 절대 경로 지정 (<code>"command": "/Users/foo/.local/bin/claude"</code>), (2) VSCode를 터미널에서 <code>code .</code>로 실행, (3) <code>~/Library/LaunchAgents</code> plist로 env 주입 — 3가지 해법 모두 명시.
+  </div>
+</section>
+
+<!-- ============================== 4. Day-by-Day ============================== -->
+<section id="sec-days">
+  <h2>4. Day-by-Day Work Package</h2>
+
+  <section id="sec-day1" class="day-card">
+    <h3>Day 1 — Metadata + Docs + 1차 vsix (0.7d)</h3>
+    <div class="meta">목표 산출물: package.json 메타 + README/CHANGELOG/LICENSE + .vscodeignore + darwin-arm64 vsix 1차 산출</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>npm install --save-dev @vscode/vsce</code> 추가</li>
+      <li><code>package.json</code> 메타 확장:
+        <ul>
+          <li><code>publisher</code>: "local-dev"</li>
+          <li><code>categories</code>: ["Other", "Programming Languages"]</li>
+          <li><code>keywords</code>: ["markdown", "review", "llm", "claude", "codex", "gemini", "pty"]</li>
+          <li><code>repository</code>: { "type": "git", "url": "https://github.com/local/vscode-md-review" }</li>
+          <li><code>license</code>: "MIT"</li>
+          <li><code>icon</code>: 생략 (Option C marketplace publish 시 추가)</li>
+          <li><code>scripts</code>: <code>"package": "vsce package"</code>, <code>"package:darwin-arm64": "vsce package --target darwin-arm64"</code> 등 5개</li>
+        </ul>
+      </li>
+      <li><code>LICENSE</code> 작성 (MIT, 표준 템플릿)</li>
+      <li><code>CHANGELOG.md</code> 작성 (Keep a Changelog 형식, 0.0.1 항목)</li>
+      <li><code>README.md</code> 작성 (영어 기술 톤, 사극톤 금지)
+        <ul>
+          <li>Overview / Features / Settings / Installation</li>
+          <li>"macOS GUI launch — zshrc trap" 섹션 (시나리오 P6-D 대응)</li>
+          <li>"Windows 10 1809+ required" 명시</li>
+          <li>"Cost guard — args whitelist enforced" 섹션</li>
+          <li>한자 0건</li>
+        </ul>
+      </li>
+      <li><code>.vscodeignore</code> 정비: <code>test/</code>, <code>.omc/</code>, <code>docs/</code>, <code>media/webview/*.ts</code> 제외</li>
+      <li>1차 vsix 빌드: <code>npm run compile &amp;&amp; npm run compile:webview &amp;&amp; npx vsce package --target darwin-arm64</code></li>
+      <li>1차 검증: <code>unzip -l mdreview-0.0.1-darwin-arm64.vsix | grep -E 'pty.*\.node'</code> 1건 이상</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>grep -E '"@vscode/vsce"' package.json</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>grep -E '"publisher"|"license"|"repository"' package.json</code> 3건 이상</li>
+      <li><input type="checkbox" disabled> <code>ls README.md CHANGELOG.md LICENSE</code> 3건 모두 존재</li>
+      <li><input type="checkbox" disabled> <code>grep -i 'zshrc\|GUI launch\|absolute path' README.md</code> 1건 이상</li>
+      <li><input type="checkbox" disabled> <code>grep -i 'Windows 10 1809\|ConPTY' README.md</code> 1건 이상</li>
+      <li><input type="checkbox" disabled> <code>ls *.vsix 2&gt;/dev/null | wc -l</code> 1 이상</li>
+      <li><input type="checkbox" disabled> <code>unzip -l mdreview-*.vsix | grep -E 'pty.*\.node'</code> 1건 이상</li>
+    </ul>
+  </section>
+
+  <section id="sec-day15" class="day-card">
+    <h3>Day 1.5 — Lifecycle 로깅 + OS Guard (0.4d)</h3>
+    <div class="meta">목표 산출물: 11 lifecycle events 일괄 점검 + Windows 1809 가드 + extension.ts 정비</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>src/extension.ts</code>의 <code>activate</code> 함수 확장:
+        <ul>
+          <li>OutputChannel "mdReview-lifecycle" 별도 생성 (기존 "mdReview"는 P5에서 사용)</li>
+          <li><code>[mdReview] activate version=&lt;ver&gt; vscode=&lt;ver&gt; node=&lt;ver&gt; platform=&lt;darwin|linux|win32&gt; arch=&lt;arm64|x64&gt;</code></li>
+          <li>Windows 1809 가드: <code>process.platform === 'win32'</code> + <code>os.release()</code> 파싱 → 10.0.17763 미만이면 <code>showWarningMessage</code> + 로깅 <code>[mdReview] os-guard-violation</code></li>
+        </ul>
+      </li>
+      <li><code>deactivate</code> 함수 추가: <code>[mdReview] deactivate</code> 로깅</li>
+      <li>기존 11 lifecycle events 점검 표(부록 B)와 grep 확인:
+        <ul>
+          <li><code>activate</code>, <code>deactivate</code> — extension.ts</li>
+          <li><code>spawn</code>, <code>kill</code> — NodePtySession (P1)</li>
+          <li><code>prompt-end-detected</code>, <code>sentinel-detected</code>, <code>echo-rejected</code>, <code>timeout-tertiary-fired</code> — TerminationDetector (P1)</li>
+          <li><code>submit-key-sent</code> — LLMOrchestrator (P4)</li>
+          <li><code>args-whitelist-violation</code> — validateArgs (P4)</li>
+          <li><code>[cost-guard]</code> — validateCommand (P4)</li>
+        </ul>
+      </li>
+      <li>누락된 event는 추가. 단, P1~P5에서 이미 모두 박혀 있다면 점검만 (회귀 방지).</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>grep -rE 'activate.*platform|os-guard-violation' src/extension.ts</code> 2건 이상</li>
+      <li><input type="checkbox" disabled> <code>grep -rE '\[mdReview\]' src/ | wc -l</code> 11 이상</li>
+      <li><input type="checkbox" disabled> <code>grep -nE 'os\.release|Windows' src/extension.ts</code> 1건 이상</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit 0</li>
+      <li><input type="checkbox" disabled> <code>npm test</code> 회귀 없음 (P5 155건 그대로)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day2" class="day-card">
+    <h3>Day 2 — CI Matrix + Smoke (0.6d)</h3>
+    <div class="meta">목표 산출물: GitHub Actions matrix workflow + 5 plat vsix 산출 자동화 + smoke 테스트</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li><code>.github/workflows/build.yml</code> 작성:
+        <ul>
+          <li>trigger: push to main + tag <code>v*</code></li>
+          <li>matrix:
+            <ul>
+              <li>darwin-arm64 → macos-14 (Apple Silicon)</li>
+              <li>darwin-x64 → macos-13 (Intel)</li>
+              <li>linux-x64 → ubuntu-22.04</li>
+              <li>linux-arm64 → ubuntu-22.04-arm (또는 self-hosted)</li>
+              <li>win32-x64 → windows-2022</li>
+            </ul>
+          </li>
+          <li>steps: checkout → setup-node 20 → npm ci → compile → compile:webview → lint → test → <code>vsce package --target $TARGET</code> → upload-artifact</li>
+          <li>한자 + cost-guard 정적 검증 step 추가</li>
+        </ul>
+      </li>
+      <li><code>test/smoke/</code> 디렉터리 (옵션): <code>@vscode/test-electron</code>으로 activate smoke
+        <ul>
+          <li>최소: VSCode launch → mdReview activate 로그 검출 → exit 0</li>
+          <li>scope: P6는 smoke 골조만 박는다. 풍부한 시나리오는 future</li>
+        </ul>
+      </li>
+      <li>local에서 <code>act</code> 또는 직접 <code>vsce package --target darwin-arm64</code>로 dry-run</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건:</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>ls .github/workflows/build.yml</code> 1건</li>
+      <li><input type="checkbox" disabled> <code>grep -E 'darwin-arm64|darwin-x64|linux-x64|linux-arm64|win32-x64' .github/workflows/build.yml</code> 5건</li>
+      <li><input type="checkbox" disabled> <code>grep -E 'vsce package --target' .github/workflows/build.yml</code> 1건 이상</li>
+      <li><input type="checkbox" disabled> <code>grep -E 'cost-guard\|hanja' .github/workflows/build.yml</code> 1건 이상</li>
+      <li><input type="checkbox" disabled> CI dry-run (local matrix는 darwin-arm64만 검증, 나머지는 push 후 확인)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day2v" class="day-card">
+    <h3>Day 2 verify — AC 검증 (0.3d)</h3>
+    <div class="meta">목표 산출물: 마스터 plan의 AC + 본 phase exit gate 일괄 검증</div>
+
+    <p><strong>구체 작업:</strong></p>
+    <ul>
+      <li>전체 회귀: <code>npm run compile &amp;&amp; npm run compile:webview &amp;&amp; npm run lint &amp;&amp; npm test</code></li>
+      <li>한자 회귀: <code>perl -nle 'print if /\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md</code> 0건</li>
+      <li>cost-guard: <code>npm run lint:cost-guard</code> exit 0</li>
+      <li>vsix 검증: <code>unzip -l *.vsix | grep -E 'pty.*\.node'</code> 1건</li>
+      <li>vsix 내 한자 검증: <code>unzip -p *.vsix &lt;extracted files&gt; | perl -nle '...'</code></li>
+      <li>P5 manual smoke 시나리오를 vsix에서 한 번 더 (선택)</li>
+    </ul>
+
+    <p><strong>측정 가능한 종료 조건 (AC 검증):</strong></p>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test 2&gt;&amp;1 | grep -E '\d+ passing'</code> 통과</li>
+      <li><input type="checkbox" disabled> 한자 0건 (전 영역)</li>
+      <li><input type="checkbox" disabled> cost-guard 0건</li>
+      <li><input type="checkbox" disabled> <code>vsce package --target darwin-arm64</code> exit 0</li>
+      <li><input type="checkbox" disabled> vsix에 node-pty.node 포함 검증</li>
+    </ul>
+  </section>
+</section>
+
+<!-- ============================== 5. Architecture Diagram ============================== -->
+<section id="sec-arch">
+  <h2>5. Architecture Diagram (CI Matrix)</h2>
+
+  <pre class="ascii">
+                     git push (main 또는 v*)
+                              |
+                              v
+              GitHub Actions: build.yml matrix
+                              |
+        +----------+----------+----------+----------+
+        |          |          |          |          |
+        v          v          v          v          v
+  darwin-arm64  darwin-x64  linux-x64  linux-arm64  win32-x64
+  (macos-14)   (macos-13)  (ubuntu)   (ubuntu-arm) (windows-2022)
+        |          |          |          |          |
+        +----------+----------+----------+----------+
+                              |
+            common steps per matrix entry:
+                              |
+              1. actions/checkout@v4
+              2. setup-node@v4 (node 20)
+              3. npm ci (node-pty native build per plat)
+              4. npm run compile + compile:webview
+              5. npm run lint (eslint + cost-guard grep)
+              6. npm test (mocha 155+ tests)
+              7. hanja static check (perl /\p{Han}/)
+              8. npx vsce package --target ${{ matrix.target }}
+              9. upload-artifact: mdreview-*-${{ matrix.target }}.vsix
+                              |
+                              v
+        +-------------- aggregated --------------+
+        | 5 platform-specific .vsix artifacts    |
+        | downloadable from Actions UI           |
+        | (tag push 시 GitHub Releases 자동 첨부)|
+        +----------------------------------------+
+                              |
+                              v
+              사용자: 자신의 plat에 맞는 vsix 다운로드 → 설치
+                              |
+                              v
+              VSCode activate → 11 lifecycle events 로깅
+              + Windows 1809 미만 시 친절한 경고
+              + macOS GUI launch zshrc 함정은 README 참조
+  </pre>
+</section>
+
+<!-- ============================== 6. Critical Specs ============================== -->
+<section id="sec-code">
+  <h2>6. Critical Specs</h2>
+
+  <section id="sec-code-pkg">
+    <h3>6.1 package.json 메타 확장</h3>
+<pre>{
+  <span class="str">"name"</span>: <span class="str">"mdreview"</span>,
+  <span class="str">"version"</span>: <span class="str">"0.0.1"</span>,
+  <span class="str">"publisher"</span>: <span class="str">"local-dev"</span>,
+  <span class="str">"license"</span>: <span class="str">"MIT"</span>,
+  <span class="str">"repository"</span>: { <span class="str">"type"</span>: <span class="str">"git"</span>, <span class="str">"url"</span>: <span class="str">"https://github.com/local/vscode-md-review"</span> },
+  <span class="str">"categories"</span>: [<span class="str">"Other"</span>, <span class="str">"Programming Languages"</span>],
+  <span class="str">"keywords"</span>: [<span class="str">"markdown"</span>, <span class="str">"review"</span>, <span class="str">"llm"</span>, <span class="str">"claude"</span>, <span class="str">"codex"</span>, <span class="str">"gemini"</span>, <span class="str">"pty"</span>],
+  <span class="str">"engines"</span>: { <span class="str">"vscode"</span>: <span class="str">"^1.90.0"</span> },
+  <span class="str">"scripts"</span>: {
+    <span class="com">// 기존 + 추가</span>
+    <span class="str">"package"</span>: <span class="str">"vsce package"</span>,
+    <span class="str">"package:darwin-arm64"</span>: <span class="str">"vsce package --target darwin-arm64"</span>,
+    <span class="str">"package:darwin-x64"</span>:   <span class="str">"vsce package --target darwin-x64"</span>,
+    <span class="str">"package:linux-x64"</span>:    <span class="str">"vsce package --target linux-x64"</span>,
+    <span class="str">"package:linux-arm64"</span>:  <span class="str">"vsce package --target linux-arm64"</span>,
+    <span class="str">"package:win32-x64"</span>:    <span class="str">"vsce package --target win32-x64"</span>
+  },
+  <span class="com">// devDependencies에 추가</span>
+  <span class="str">"devDependencies"</span>: { <span class="com">/* ... */</span> <span class="str">"@vscode/vsce"</span>: <span class="str">"^2.32.0"</span> }
+}
+</pre>
+
+    <div class="callout info">
+      <strong>icon 정책</strong>
+      P6 범위에서는 icon 생략. marketplace publish(Option C, future ticket) 시 128×128 PNG 추가. <code>"icon": "media/icon.png"</code> 자리는 비워두되 publish 직전 채운다.
+    </div>
+  </section>
+
+  <section id="sec-code-actions">
+    <h3>6.2 GitHub Actions matrix (build.yml)</h3>
+<pre><span class="kw">name</span>: build
+<span class="kw">on</span>:
+  push:
+    branches: [main]
+    tags: [<span class="str">'v*'</span>]
+  pull_request:
+    branches: [main]
+
+<span class="kw">jobs</span>:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14,     target: darwin-arm64 }
+          - { os: macos-13,     target: darwin-x64 }
+          - { os: ubuntu-22.04, target: linux-x64 }
+          - { os: ubuntu-22.04-arm, target: linux-arm64 }
+          - { os: windows-2022, target: win32-x64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: <span class="str">'20'</span> }
+      - run: npm ci
+      - run: npm run compile
+      - run: npm run compile:webview
+      - run: npm run lint            <span class="com"># includes cost-guard</span>
+      - run: npm test
+      - name: hanja static check
+        shell: bash
+        run: <span class="str">'! perl -nle "print if /\\p{Han}/" src/**/*.ts test/**/*.ts README.md CHANGELOG.md 2&gt;/dev/null'</span>
+      - run: npx vsce package --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mdreview-${{ matrix.target }}
+          path: <span class="str">'*.vsix'</span>
+</pre>
+  </section>
+
+  <section id="sec-code-activate">
+    <h3>6.3 src/extension.ts — activate + OS guard</h3>
+<pre><span class="kw">import</span> * <span class="kw">as</span> vscode <span class="kw">from</span> <span class="str">'vscode'</span>;
+<span class="kw">import</span> { release } <span class="kw">from</span> <span class="str">'os'</span>;
+<span class="kw">import</span> { MarkdownReviewEditor } <span class="kw">from</span> <span class="str">'./editor/MarkdownReviewEditor'</span>;
+
+<span class="kw">export function</span> <span class="fn">activate</span>(context: <span class="typ">vscode.ExtensionContext</span>): <span class="typ">void</span> {
+  <span class="kw">const</span> lifecycle = vscode.window.<span class="fn">createOutputChannel</span>(<span class="str">'mdReview-lifecycle'</span>);
+  <span class="kw">const</span> info = `[mdReview] activate version=${context.extension.packageJSON.version} `
+             + `vscode=${vscode.version} platform=${process.platform} arch=${process.arch}`;
+  lifecycle.<span class="fn">appendLine</span>(info);
+
+  <span class="com">// Windows 1809 (build 17763) 가드</span>
+  <span class="kw">if</span> (process.platform === <span class="str">'win32'</span>) {
+    <span class="kw">const</span> rel = <span class="fn">release</span>(); <span class="com">// "10.0.17763" 형태</span>
+    <span class="kw">const</span> build = <span class="fn">parseInt</span>(rel.<span class="fn">split</span>(<span class="str">'.'</span>)[2] ?? <span class="str">'0'</span>, 10);
+    <span class="kw">if</span> (build &lt; 17763) {
+      lifecycle.<span class="fn">appendLine</span>(`[mdReview] os-guard-violation win32 build=${build} (1809+ required for ConPTY)`);
+      <span class="kw">void</span> vscode.window.<span class="fn">showWarningMessage</span>(
+        <span class="str">'mdReview는 Windows 10 1809(build 17763) 이상이 필요합니다. 현재 빌드에서는 PTY 호출이 실패할 수 있습니다.'</span>,
+      );
+    }
+  }
+
+  context.subscriptions.<span class="fn">push</span>(
+    vscode.window.<span class="fn">registerCustomEditorProvider</span>(
+      MarkdownReviewEditor.viewType,
+      <span class="kw">new</span> <span class="typ">MarkdownReviewEditor</span>(context),
+      { webviewOptions: { retainContextWhenHidden: <span class="kw">true</span> } },
+    ),
+    lifecycle,
+  );
+}
+
+<span class="kw">export function</span> <span class="fn">deactivate</span>(): <span class="typ">void</span> {
+  <span class="com">// 별도 정리 없음 — subscriptions이 자동 dispose</span>
+}
+</pre>
+  </section>
+
+  <section id="sec-code-vscodeignore">
+    <h3>6.4 .vscodeignore 정비</h3>
+<pre><span class="com"># src TypeScript는 컴파일된 out/만 포함</span>
+**/*.ts
+!media/webview/**/*.ts  <span class="com"># webview ts도 컴파일 후 out으로 별도 처리되므로 제외</span>
+**/*.map
+
+<span class="com"># 개발 도구 + 메타</span>
+.vscode/**
+.github/**
+.omc/**
+docs/**
+test/**
+node_modules/.cache/**
+
+<span class="com"># 설정 파일</span>
+tsconfig.json
+tsconfig.webview.json
+.eslintrc.json
+.prettierrc
+.mocharc.json
+
+<span class="com"># OS</span>
+.DS_Store
+**/.DS_Store
+</pre>
+
+    <div class="callout warn">
+      <strong>node_modules 처리</strong>
+      vsce는 기본적으로 <code>node_modules</code> 안의 production deps만 포함. dev deps는 제외. node-pty native binary는 prebuild 형태로 production deps 안에 있어 vsix에 동봉됨. <code>vsce package --target &lt;plat&gt;</code>가 plat별 prebuild를 선별하여 abi 고정.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 7. ADR 운영화 ============================== -->
+<section id="sec-adr">
+  <h2>7. ADR 운영화</h2>
+
+  <table>
+    <thead><tr><th>ADR 항목</th><th>master 결정</th><th>P6 운영화</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>P6: vsce platform-specific vsix</td>
+        <td>설치 단순성 + abi 고정. install-time rebuild 금지.</td>
+        <td><code>vsce package --target &lt;plat&gt;</code>로 5 vsix 산출. <code>package.json</code> scripts에 <code>package:&lt;plat&gt;</code> 5개 명시. CI matrix가 자동 실행.</td>
+      </tr>
+      <tr>
+        <td>P6: cost-guard CI 회귀 차단</td>
+        <td>마스터 plan 시나리오 C 대응. <code>-p</code> / <code>--print</code> 정적 grep + 런타임 화이트리스트.</td>
+        <td>GitHub Actions step에 <code>npm run lint:cost-guard</code> 포함. CI 실패 시 release 차단.</td>
+      </tr>
+      <tr>
+        <td>P6: 한자 정책</td>
+        <td>코드/문서/메타데이터 한자 0건. CI 정적 검증.</td>
+        <td>Actions step에 <code>perl /\p{Han}/</code> grep 추가. 회귀 시 CI fail. README/CHANGELOG도 영어 단일 (사용자 visible 한국어 문자열은 코드 안에서 별도 다룸).</td>
+      </tr>
+      <tr>
+        <td>R-1 / 시나리오 P6-A</td>
+        <td>node-pty native 빌드 실패 위험. vsce platform-specific으로 abi 고정.</td>
+        <td>CI matrix runner가 각 plat에서 native build → vsix에 plat 한정 binary만 동봉. <code>unzip -l *.vsix | grep pty.*\.node</code>로 산출물 검증.</td>
+      </tr>
+      <tr>
+        <td>R-6 / 자식 leak</td>
+        <td><code>deactivate</code> hook에서 graceful kill. P1에서 이미 구현.</td>
+        <td>P6에서는 회귀 점검만. <code>NodePtySession.kill(SIGTERM)</code> + 2s 후 SIGKILL은 P1 코드에 박혀 있음.</td>
+      </tr>
+      <tr>
+        <td>R-8 / Windows ConPTY</td>
+        <td>Win10 1809+ 명시.</td>
+        <td><code>extension.ts</code> activate에서 <code>os.release()</code> build 번호 파싱 → 1809 미만이면 <code>showWarningMessage</code> + 로깅.</td>
+      </tr>
+      <tr>
+        <td>R-14 / macOS GUI launch zshrc</td>
+        <td>README에 함정 명시.</td>
+        <td>README의 "Troubleshooting → macOS GUI launch" 섹션에 (1) settings 절대 경로, (2) <code>code .</code> 터미널 실행, (3) launchd plist env 주입 3가지 해법 명시.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 8. 확장 Test Plan ============================== -->
+<section id="sec-tests">
+  <h2>8. 확장 Test Plan (DELIBERATE)</h2>
+
+  <table>
+    <thead><tr><th>Layer</th><th>도구</th><th>범위</th><th>커버리지 목표</th></tr></thead>
+    <tbody>
+      <tr><td>Unit</td><td>mocha + chai + sinon</td><td>P0~P5에서 누적된 155+ 테스트. P6는 OS 가드 함수만 추가.</td><td>80% (line)</td></tr>
+      <tr><td>Integration</td><td>@vscode/test-electron (옵션)</td><td>VSCode 인스턴스 launch → activate 로그 검출 → exit 0</td><td>골조만 (시나리오 풍부화는 future)</td></tr>
+      <tr><td>E2E (수동)</td><td>실제 claude CLI</td><td>.md → 코멘트 → submit → diff → accept → 본문 반영 → graceful kill</td><td>1 happy path</td></tr>
+      <tr><td>Observability</td><td>OutputChannel grep</td><td>11 lifecycle events 모두 발화 검증</td><td>11/11</td></tr>
+      <tr><td>Static (cost-guard)</td><td>grep</td><td><code>-p</code> / <code>--print</code> 정적 검색</td><td>0건</td></tr>
+      <tr><td>Static (한자)</td><td>perl <code>\p{Han}</code></td><td>전 영역 (src + test + docs + README + CHANGELOG)</td><td>0건</td></tr>
+      <tr><td>Artifact (vsix)</td><td>unzip + grep</td><td>node-pty.node 포함 + 산출물 구조 검증</td><td>1건 이상</td></tr>
+      <tr><td>CI matrix</td><td>GitHub Actions</td><td>5 plat 모두 위 layers 통과</td><td>5/5 green</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.1 11 Lifecycle Events 일괄 검증</h3>
+  <table>
+    <thead><tr><th>#</th><th>Event</th><th>발화 지점</th><th>검증 방법</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>activate</code></td><td>extension.ts</td><td>OutputChannel("mdReview-lifecycle") 첫 줄</td></tr>
+      <tr><td>2</td><td><code>deactivate</code></td><td>extension.ts</td><td>VSCode 종료 시 (수동)</td></tr>
+      <tr><td>3</td><td><code>spawn</code></td><td>NodePtySession (P1)</td><td>OutputChannel("mdReview") 로그 grep</td></tr>
+      <tr><td>4</td><td><code>kill</code></td><td>NodePtySession (P1)</td><td>OutputChannel 로그 grep</td></tr>
+      <tr><td>5</td><td><code>prompt-end-detected</code></td><td>TerminationDetector (P1)</td><td>OutputChannel 로그 grep (DEBUG 모드)</td></tr>
+      <tr><td>6</td><td><code>sentinel-detected</code></td><td>TerminationDetector (P1)</td><td>OutputChannel 로그 grep</td></tr>
+      <tr><td>7</td><td><code>echo-rejected</code></td><td>TerminationDetector (P1)</td><td>OutputChannel 로그 grep</td></tr>
+      <tr><td>8</td><td><code>timeout-tertiary-fired</code></td><td>TerminationDetector (P1)</td><td>OutputChannel 로그 grep</td></tr>
+      <tr><td>9</td><td><code>submit-key-sent</code></td><td>LLMOrchestrator (P4)</td><td>OutputChannel 로그 grep</td></tr>
+      <tr><td>10</td><td><code>args-whitelist-violation</code></td><td>validateArgs (P4)</td><td>cost guard 단위 테스트에서 검증</td></tr>
+      <tr><td>11</td><td><code>[cost-guard]</code></td><td>validateCommand (P4)</td><td>cost guard 단위 테스트에서 검증</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 9. AC ============================== -->
+<section id="sec-ac">
+  <h2>9. Acceptance Criteria</h2>
+
+  <table>
+    <thead><tr><th>#</th><th>기준</th><th>검증 절차</th><th>통과</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>AC-P6-1</td>
+        <td><code>vsce package --target darwin-arm64</code> exit 0</td>
+        <td><code>npm run package:darwin-arm64</code> → <code>.vsix</code> 생성 확인</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-2</td>
+        <td>vsix에 node-pty native binary 포함</td>
+        <td><code>unzip -l mdreview-*-darwin-arm64.vsix | grep -E 'pty.*\.node'</code> 1건 이상</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-3</td>
+        <td>README에 macOS GUI launch zshrc 함정 섹션</td>
+        <td><code>grep -i 'zshrc\|GUI launch\|absolute path' README.md</code> 1건 이상</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-4</td>
+        <td>README에 Windows 10 1809+ 명시</td>
+        <td><code>grep -i 'Windows 10 1809\|ConPTY' README.md</code> 1건 이상</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-5</td>
+        <td>한자 회귀 0건 (코드 + 문서 + 메타)</td>
+        <td><code>perl /\p{Han}/</code> 전 영역 0건</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-6</td>
+        <td>cost-guard CI 통합</td>
+        <td><code>.github/workflows/build.yml</code>에 <code>lint:cost-guard</code> 또는 grep step 존재</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-7</td>
+        <td>matrix workflow 5 plat 명시</td>
+        <td><code>grep -E 'darwin-arm64|darwin-x64|linux-x64|linux-arm64|win32-x64' .github/workflows/build.yml</code> 5건</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-8</td>
+        <td>Windows 1809 가드 activate에 박혀 있음</td>
+        <td><code>grep -nE 'os-guard-violation|17763' src/extension.ts</code> 1건 이상</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-9</td>
+        <td>npm test 회귀 (P5 155건 ≥ 통과)</td>
+        <td><code>npm test 2&gt;&amp;1 | tail -3</code>에 "passing" + 실패 0건</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>AC-P6-10</td>
+        <td>LICENSE + CHANGELOG 존재</td>
+        <td><code>ls LICENSE CHANGELOG.md</code> 둘 다 출력</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 10. Risks ============================== -->
+<section id="sec-risks">
+  <h2>10. Risks &amp; Mitigations</h2>
+
+  <table>
+    <thead><tr><th>#</th><th>위험</th><th>가능성</th><th>영향</th><th>완화</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>R6-1</td>
+        <td>vsce가 transitive deps 빌드 시 native module rebuild 실패</td>
+        <td>중</td>
+        <td>높음</td>
+        <td>local에서 <code>npx vsce package --target darwin-arm64</code>로 dry-run. 실패 시 <code>vsce ls</code>로 포함 파일 검사, <code>--no-dependencies</code> 옵션 검토.</td>
+      </tr>
+      <tr>
+        <td>R6-2</td>
+        <td>GitHub Actions matrix runner OS image deprecation</td>
+        <td>낮</td>
+        <td>중</td>
+        <td>matrix include 행마다 OS version 명시 (macos-14, macos-13, ubuntu-22.04, windows-2022). dependabot으로 image bump 추적.</td>
+      </tr>
+      <tr>
+        <td>R6-3</td>
+        <td>linux-arm64 runner 가용성 낮음 (GitHub-hosted)</td>
+        <td>중</td>
+        <td>낮</td>
+        <td>linux-arm64는 self-hosted 또는 ubuntu-22.04-arm 검토. 가용성 부재 시 P6는 4 plat로 출하 (linux-arm64는 future).</td>
+      </tr>
+      <tr>
+        <td>R6-4</td>
+        <td>README 영어로 작성하면서 한국어 사용자 경험 저하</td>
+        <td>중</td>
+        <td>낮</td>
+        <td>P6는 영어 README 단일. 향후 README.ko.md 추가 검토 (future ticket). 사용자 visible UI 문자열은 코드에서 한국어 유지.</td>
+      </tr>
+      <tr>
+        <td>R6-5</td>
+        <td>node-pty prebuild이 새 Node/Electron major에서 깨짐</td>
+        <td>중</td>
+        <td>높음</td>
+        <td><code>engines.vscode = "^1.90.0"</code> 고정. node-pty 버전도 lockfile로 고정. major bump 시 별도 phase.</td>
+      </tr>
+      <tr>
+        <td>R6-6</td>
+        <td>vsix 크기 비대 (10MB+, marketplace 100MB 한도는 여유)</td>
+        <td>낮</td>
+        <td>낮</td>
+        <td>.vscodeignore로 test/, docs/, .omc/, source map 제외. <code>vsce ls</code>로 산출 전 점검.</td>
+      </tr>
+      <tr>
+        <td>R6-7</td>
+        <td>publisher 미인증으로 vsix가 "unverified publisher" 경고</td>
+        <td>높</td>
+        <td>낮</td>
+        <td>P6 범위는 local install (.vsix 직접 배포). marketplace publish + verified publisher 인증은 Option C future ticket.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 11. Exit Gate ============================== -->
+<section id="sec-exit">
+  <h2>11. Exit Gate to Future-features</h2>
+
+  <ul class="exit-criteria">
+    <li><input type="checkbox" disabled> AC-P6-1 ~ AC-P6-10 모두 통과</li>
+    <li><input type="checkbox" disabled> <code>npm test</code> 155+ passing, 실패 0</li>
+    <li><input type="checkbox" disabled> <code>npm run lint</code> exit 0</li>
+    <li><input type="checkbox" disabled> 한자 회귀 0건 (전 영역)</li>
+    <li><input type="checkbox" disabled> cost-guard 회귀 0건</li>
+    <li><input type="checkbox" disabled> <code>.vsix</code> 산출물 1개 이상 존재 (darwin-arm64 최소)</li>
+    <li><input type="checkbox" disabled> vsix에 <code>node-pty.node</code> binary 포함</li>
+    <li><input type="checkbox" disabled> GitHub Actions matrix workflow 작성 완료 (CI 실행 가능 상태)</li>
+    <li><input type="checkbox" disabled> README + CHANGELOG + LICENSE 3개 문서 모두 존재</li>
+    <li><input type="checkbox" disabled> 마스터 plan AC-1 ~ AC-15 누적 검증 (각 phase에서 통과한 항목 점검)</li>
+  </ul>
+
+  <div class="callout ok">
+    <strong>F-features (Future, P6 이후)</strong>
+    <ul style="margin: 8px 0 0 18px;">
+      <li><strong>F-1</strong>: marketplace publish (Option C, publisher verified + icon + screenshot)</li>
+      <li><strong>F-2</strong>: inline accept button (diff editor native UX 강화, P5 R-10 승격)</li>
+      <li><strong>F-3</strong>: word-level diff (jsdiff 도입 또는 LCS 재귀 분해)</li>
+      <li><strong>F-4</strong>: 다중 동시 submit 큐</li>
+      <li><strong>F-5</strong>: README.ko.md (한국어 사용자 가이드)</li>
+      <li><strong>P0.5 보충</strong>: tcpdump network probe + dashboard 비용 검증 (사용자 sudo 필요)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================== 12. 부록 ============================== -->
+<section id="sec-appendix">
+  <h2>12. 부록</h2>
+
+  <section id="sec-appendix-a">
+    <h3>A. vsce 명령 모음</h3>
+<pre><span class="com"># 의존성 설치</span>
+npm install --save-dev @vscode/vsce
+
+<span class="com"># 1차 vsix 빌드 (현재 plat)</span>
+npx vsce package
+
+<span class="com"># platform-specific (5개)</span>
+npx vsce package --target darwin-arm64
+npx vsce package --target darwin-x64
+npx vsce package --target linux-x64
+npx vsce package --target linux-arm64
+npx vsce package --target win32-x64
+
+<span class="com"># 산출물 검증</span>
+unzip -l mdreview-*-darwin-arm64.vsix | grep -E <span class="str">'pty.*\.node'</span>
+unzip -l mdreview-*-darwin-arm64.vsix | wc -l
+
+<span class="com"># local install (개발 검증)</span>
+code --install-extension mdreview-0.0.1-darwin-arm64.vsix
+
+<span class="com"># 포함 파일 목록 dry-run</span>
+npx vsce ls
+
+<span class="com"># marketplace publish (future, P6 범위 외)</span>
+<span class="com"># npx vsce publish --target darwin-arm64</span>
+</pre>
+  </section>
+
+  <section id="sec-appendix-b">
+    <h3>B. 11 Lifecycle Events 확장</h3>
+    <p>본 표는 §8.1과 동일 내용을 grep 명령 형태로 재배열한 것이옵니다. CI 또는 manual smoke 시 회귀 점검용.</p>
+<pre>grep -rE <span class="str">'\[mdReview\]\s+(activate|deactivate)'</span> src/        <span class="com"># events 1, 2</span>
+grep -rE <span class="str">'spawn|kill'</span> src/pty/NodePtySession.ts            <span class="com"># events 3, 4</span>
+grep -rE <span class="str">'prompt-end-detected|sentinel-detected'</span> src/pty/   <span class="com"># events 5, 6</span>
+grep -rE <span class="str">'echo-rejected|timeout-tertiary-fired'</span> src/pty/   <span class="com"># events 7, 8</span>
+grep -rE <span class="str">'submit-key-sent'</span> src/llm/                         <span class="com"># event 9</span>
+grep -rE <span class="str">'args-whitelist-violation'</span> src/llm/                <span class="com"># event 10</span>
+grep -rE <span class="str">'cost-guard'</span> src/llm/                               <span class="com"># event 11</span>
+</pre>
+  </section>
+
+  <section id="sec-appendix-c">
+    <h3>C. 참고문헌</h3>
+    <ul>
+      <li>vsce 공식 문서 — <code>https://github.com/microsoft/vscode-vsce</code></li>
+      <li>VSCode Extension Manifest — <code>https://code.visualstudio.com/api/references/extension-manifest</code></li>
+      <li>VSCode Platform-Specific Extensions — <code>https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions</code></li>
+      <li>node-pty Windows ConPTY 요구사항 — <code>https://github.com/microsoft/node-pty#dependencies</code></li>
+      <li>Keep a Changelog — <code>https://keepachangelog.com/en/1.1.0/</code></li>
+      <li>MIT License — <code>https://opensource.org/license/mit</code></li>
+      <li>마스터 plan §P6 — <code>docs/plans/vscode-md-review-plan.md</code> line 418~459</li>
+      <li>마스터 plan §AC-13 / R-1 / R-6 / R-8 / R-14 — 동 plan 위험/AC 표</li>
+    </ul>
+  </section>
+</section>
+
+</main>
+</div>
+</body>
+</html>

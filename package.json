@@ -1,0 +1,186 @@
+{
+  "name": "mdreview",
+  "displayName": "Markdown Inline Review",
+  "description": "VSCode extension for inline markdown review with interactive LLM CLI sessions",
+  "publisher": "local-dev",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/local/vscode-md-review"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "markdown",
+    "review",
+    "llm",
+    "claude",
+    "codex",
+    "gemini",
+    "pty",
+    "diff"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mdReview.submit",
+        "title": "MD Review: Submit Comments to LLM"
+      },
+      {
+        "command": "mdReview.toggle",
+        "title": "MD Review: Toggle Review Editor",
+        "icon": "$(comment-discussion)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "mdReview.toggle",
+          "when": "resourceExtname == .md",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "mdReview.toggle",
+        "key": "ctrl+shift+m r",
+        "mac": "cmd+shift+m r",
+        "when": "resourceExtname == .md"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "mdReview.editor",
+        "displayName": "Markdown Review",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "configuration": {
+      "title": "Markdown Inline Review",
+      "properties": {
+        "mdReview.providers": {
+          "type": "object",
+          "default": {},
+          "description": "Provider-specific command/args/cwd/env configuration. Keys are provider names (claude, codex, gemini)."
+        },
+        "mdReview.defaultProvider": {
+          "type": "string",
+          "enum": [
+            "claude",
+            "codex",
+            "gemini"
+          ],
+          "default": "claude",
+          "description": "Default LLM provider to use for review submissions."
+        },
+        "mdReview.sentinelTimeoutMs": {
+          "type": "number",
+          "default": 180000,
+          "description": "Timeout in milliseconds for sentinel detection before giving up."
+        },
+        "mdReview.responseQuietPeriodMs": {
+          "type": "number",
+          "default": 200,
+          "description": "Quiet period in milliseconds after sentinel detection before finalizing response."
+        },
+        "mdReview.persistenceBackend": {
+          "type": "string",
+          "enum": [
+            "sidecar",
+            "workspaceState"
+          ],
+          "default": "sidecar",
+          "description": "Backend for persisting review comments. 'sidecar' writes .review.json next to each .md file (git-portable). 'workspaceState' stores in VSCode's per-workspace state (not portable). Mutually exclusive."
+        },
+        "mdReview.applyMode": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "diff"
+          ],
+          "default": "direct",
+          "description": "How LLM revisions are applied. 'direct': the CLI edits the file itself (recommended; immune to terminal screen-scrape corruption). 'diff': the revised markdown is received as chat output and applied through the hunk approval flow."
+        },
+        "mdReview.autoApply": {
+          "type": "boolean",
+          "default": false,
+          "description": "Apply all hunks from the LLM response immediately without the hunk approval QuickPick. The diff editor is still shown for inspection."
+        },
+        "mdReview.previewTheme": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "default": "auto",
+          "description": "Color theme for the review preview. 'auto' follows the VSCode theme; 'light' / 'dark' force a GitHub-style palette regardless of the editor theme."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "compile:webview": "tsc -p ./tsconfig.webview.json --noEmit",
+    "bundle:webview": "esbuild media/webview/main.ts --bundle --format=iife --outfile=media/webview/dist/main.js --target=es2020 --platform=browser --sourcemap",
+    "compile:all": "npm run compile && npm run compile:webview && npm run bundle:webview",
+    "watch": "tsc -watch -p ./",
+    "watch:webview": "esbuild media/webview/main.ts --bundle --format=iife --outfile=media/webview/dist/main.js --target=es2020 --platform=browser --sourcemap --watch",
+    "test": "mocha",
+    "lint": "eslint src --ext ts && eslint test --ext ts && npm run lint:cost-guard",
+    "lint:cost-guard": "! grep -rE '\"-p\"|\"--print\"' src/ 2>/dev/null",
+    "lint:hanja": "! perl -nle 'print \"$ARGV:$.: $_\" if /\\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md 2>/dev/null",
+    "package": "vsce package",
+    "package:darwin-arm64": "vsce package --target darwin-arm64",
+    "package:darwin-x64": "vsce package --target darwin-x64",
+    "package:linux-x64": "vsce package --target linux-x64",
+    "package:linux-arm64": "vsce package --target linux-arm64",
+    "package:win32-x64": "vsce package --target win32-x64",
+    "postinstall": "node -e \"require('node-pty')\" || npx electron-rebuild -m node_modules/node-pty || true",
+    "test:webview": "node test-webview/selection-drag.js && node test-webview/full-flow.js"
+  },
+  "dependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "markdown-it": "^14.1.1",
+    "node-pty": "^1.0.0",
+    "strip-ansi": "^6.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.0",
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^3.9.1",
+    "chai": "^4.4.1",
+    "electron-rebuild": "^3.2.9",
+    "esbuild": "^0.28.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "playwright": "^1.60.0",
+    "prettier": "^3.3.2",
+    "sinon": "^18.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}

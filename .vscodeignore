@@ -1,0 +1,67 @@
+# Source TypeScript (use compiled out/ instead)
+**/*.ts
+!out/**/*.js
+**/*.map
+
+# Tooling configs
+tsconfig.json
+tsconfig.webview.json
+.eslintrc.json
+.prettierrc
+.mocharc.json
+
+# Dev folders
+.vscode/**
+.github/**
+.claude/**
+.omc/**
+docs/**
+test/**
+src/**
+
+# Lockfile / cache (vsce ships production node_modules; keep node_modules itself!)
+node_modules/.cache/**
+package-lock.json
+
+# node-pty: keep only .node prebuilds; drop C++ sources / build inputs / docs
+node_modules/node-pty/src/**
+node_modules/node-pty/deps/**
+node_modules/node-pty/scripts/**
+node_modules/node-pty/third_party/**
+node_modules/node-pty/binding.gyp
+node_modules/node-pty/typings/**
+node_modules/node-pty/README.md
+# node-pty: by default keep only darwin-arm64 prebuild for local packaging.
+# CI overrides this per matrix.target via a workflow step.
+node_modules/node-pty/prebuilds/darwin-x64/**
+node_modules/node-pty/prebuilds/linux-x64/**
+node_modules/node-pty/prebuilds/linux-arm64/**
+node_modules/node-pty/prebuilds/win32-arm64/**
+node_modules/node-pty/prebuilds/win32-x64/**
+# zod: drop dual-build artefacts not used by Node CommonJS host
+node_modules/zod/lib/types-*.test.ts
+# markdown-it: dist/index.cjs.js is the CommonJS "main" entry — must ship.
+# Drop only the browser bundles.
+node_modules/markdown-it/dist/markdown-it.js
+node_modules/markdown-it/dist/markdown-it.min.js
+# Drop test/docs from all transitive deps
+node_modules/**/test/**
+node_modules/**/tests/**
+node_modules/**/docs/**
+node_modules/**/example/**
+node_modules/**/examples/**
+node_modules/**/*.md
+node_modules/**/*.markdown
+node_modules/**/CHANGELOG*
+node_modules/**/HISTORY*
+node_modules/**/.github/**
+node_modules/**/.travis.yml
+node_modules/**/.eslintrc*
+node_modules/**/tsconfig*.json
+node_modules/**/*.ts
+!node_modules/**/*.d.ts
+
+# OS / editor cruft
+.DS_Store
+**/.DS_Store
+**/Thumbs.db

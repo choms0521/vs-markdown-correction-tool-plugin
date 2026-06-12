@@ -1,0 +1,1244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P2 상세 계획서 — 코멘트 데이터 모델 + 영속화</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #d8d8d8;
+    --accent: #1f6feb;
+    --warn: #b97f00;
+    --danger: #b3261e;
+    --ok: #1e7f3a;
+    --code-bg: #f5f6f8;
+    --table-stripe: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    min-height: 100vh;
+  }
+  aside.toc {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    background: #fbfbfb;
+  }
+  aside.toc h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  aside.toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+  }
+  aside.toc ol li {
+    margin: 4px 0;
+  }
+  aside.toc ol li a {
+    color: var(--fg);
+    text-decoration: none;
+    padding: 4px 6px;
+    display: block;
+    border-radius: 4px;
+  }
+  aside.toc ol li a:hover {
+    background: #eef2f7;
+    color: var(--accent);
+  }
+  aside.toc ol li ol {
+    padding-left: 12px;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  main {
+    padding: 32px 40px 80px;
+    max-width: 1100px;
+  }
+  main h1 {
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+  main .subtitle {
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-size: 13px;
+  }
+  main h2 {
+    font-size: 20px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 6px;
+    margin-top: 40px;
+  }
+  main h3 {
+    font-size: 16px;
+    margin-top: 24px;
+  }
+  main h4 {
+    font-size: 14px;
+    margin-top: 18px;
+    color: var(--muted);
+  }
+  p { margin: 8px 0; }
+  code {
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  pre .kw  { color: #b04bdb; }
+  pre .str { color: #1e7f3a; }
+  pre .com { color: #8a8a8a; font-style: italic; }
+  pre .num { color: #b97f00; }
+  pre .typ { color: #1f6feb; }
+  pre .fn  { color: #b97f00; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #f0f3f7;
+    font-weight: 600;
+  }
+  tbody tr:nth-child(odd) td {
+    background: var(--table-stripe);
+  }
+  .day-card {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 18px 0;
+    background: #fcfcfd;
+  }
+  .day-card h3 {
+    margin-top: 0;
+    color: var(--accent);
+  }
+  .day-card .meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .callout {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-left: 4px solid var(--accent);
+    background: #eff5fd;
+  }
+  .callout.info   { border-left-color: var(--accent); background: #eff5fd; }
+  .callout.warn   { border-left-color: var(--warn);   background: #fdf6e7; }
+  .callout.danger { border-left-color: var(--danger); background: #fdecea; }
+  .callout.ok     { border-left-color: var(--ok);     background: #eaf6ee; }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .ascii {
+    background: #1a1f29;
+    color: #e6e6e6;
+    padding: 18px 20px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e9eef5;
+    color: var(--fg);
+    margin-right: 4px;
+  }
+  .tag.warn   { background: #fdf0d0; color: var(--warn); }
+  .tag.danger { background: #fbd9d6; color: var(--danger); }
+  .tag.ok     { background: #d8eedf; color: var(--ok); }
+  ul.exit-criteria {
+    list-style: none;
+    padding-left: 0;
+  }
+  ul.exit-criteria li {
+    margin: 6px 0;
+    padding-left: 22px;
+    position: relative;
+  }
+  ul.exit-criteria li input[type="checkbox"] {
+    position: absolute;
+    left: 0;
+    top: 4px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    pre, table, .day-card, .callout { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#sec-overview">1. 개요</a></li>
+    <li><a href="#sec-dr">2. RALPLAN-DR 요약</a>
+      <ol>
+        <li><a href="#sec-dr-principles">2.1 Principles</a></li>
+        <li><a href="#sec-dr-drivers">2.2 Decision Drivers</a></li>
+        <li><a href="#sec-dr-options">2.3 Viable Options</a></li>
+        <li><a href="#sec-dr-rationale">2.4 선택 근거</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-days">3. Day-by-Day Work Package</a>
+      <ol>
+        <li><a href="#sec-day1">Day 1 — 모델 + Sidecar</a></li>
+        <li><a href="#sec-day15">Day 1.5 — Store + WorkspaceState</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-arch">4. Architecture Diagram</a></li>
+    <li><a href="#sec-code">5. Critical Code Specs</a>
+      <ol>
+        <li><a href="#sec-code-model">5.1 Comment 모델</a></li>
+        <li><a href="#sec-code-sidecar">5.2 SidecarPersistence</a></li>
+        <li><a href="#sec-code-wsstate">5.3 WorkspaceStatePersistence</a></li>
+        <li><a href="#sec-code-store">5.4 CommentStore</a></li>
+      </ol>
+    </li>
+    <li><a href="#sec-adr">6. ADR 운영화</a></li>
+    <li><a href="#sec-schema">7. JSON Persistence Schema</a></li>
+    <li><a href="#sec-ac">8. Acceptance Criteria</a></li>
+    <li><a href="#sec-risks">9. Risks & Mitigations</a></li>
+    <li><a href="#sec-exit">10. Exit Gate to P3</a></li>
+    <li><a href="#sec-appendix">11. 부록</a>
+      <ol>
+        <li><a href="#sec-appendix-a">A. 환경 변수</a></li>
+        <li><a href="#sec-appendix-b">B. 참고문헌</a></li>
+      </ol>
+    </li>
+  </ol>
+</aside>
+
+<main>
+
+<h1>P2 — 코멘트 데이터 모델 + 영속화</h1>
+<p class="subtitle">Phase 2 detailed plan · Comment Model &amp; Persistence · 마스터 계획 <code>docs/plans/vscode-md-review-plan.md</code> 분해본 · 2026-05-15 작성</p>
+
+<!-- ============================== 1. 개요 ============================== -->
+<section id="sec-overview">
+  <h2>1. 개요</h2>
+
+  <p>본 phase는 마크다운 리뷰 코멘트(suggestion, question)를 표현하는 도메인 모델과 그 영속화 계층을 구현한다. P3 WebView가 코멘트를 화면에 그리고, P4 PromptBuilder가 LLM에 송신할 코멘트 목록을 직렬화하기 위한 데이터 기반을 마련한다.</p>
+
+  <table>
+    <tbody>
+      <tr><th style="width: 18%">Goal</th><td><code>Comment</code> 엔티티, <code>CommentStore</code> CRUD API, <code>SidecarPersistence</code>(<code>.md.review.json</code>) 및 <code>WorkspaceStatePersistence</code>(VSCode <code>Memento</code>)를 구현하고 round-trip 회귀 테스트로 검증한다.</td></tr>
+      <tr><th>Side / Out</th><td>WebView UI, 사이드 panel 렌더링, LLM 호출, diff 적용은 본 phase 범위 외. 본 phase는 <strong>데이터 계층만</strong>.</td></tr>
+      <tr><th>Scope (in)</th><td>도메인 타입, zod 스키마, 두 영속화 백엔드, 메모리 내 immutable CRUD, 단위 테스트, 한자 정적 검증.</td></tr>
+      <tr><th>Scope (out)</th><td>WebView 인터랙션, AnchorResolver(P3 소관), 코멘트 정렬/필터 UX, multi-document 통합 관리.</td></tr>
+      <tr><th>Key Deliverables</th><td>
+        <code>src/model/Comment.ts</code><br>
+        <code>src/store/CommentStore.ts</code><br>
+        <code>src/store/SidecarPersistence.ts</code><br>
+        <code>src/store/WorkspaceStatePersistence.ts</code><br>
+        <code>src/store/PersistenceBackend.ts</code> (인터페이스)<br>
+        <code>test/store/CommentStore.test.ts</code><br>
+        <code>test/store/SidecarPersistence.test.ts</code><br>
+        <code>test/store/WorkspaceStatePersistence.test.ts</code>
+      </td></tr>
+      <tr><th>Dependencies</th><td>P0(scaffolding) 완료, P1(PTY 코어) 완료. zod ^3.23.8 사용 가능. <code>fs/promises</code>, <code>node:crypto</code>(randomUUID) 사용. VSCode <code>Memento</code> API는 의존성 주입으로 추상화하여 단위 테스트에서 모킹.</td></tr>
+      <tr><th>Effort</th><td>1.5 작업일 (Day 1 모델 + Sidecar / Day 1.5 Store + WorkspaceState + 종료 조건 검증)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>본 phase의 위치</strong>
+    P2는 P3 WebView와 P4 PromptBuilder의 입력 데이터 계약을 확정한다. 따라서 도메인 모델 결정과 영속화 포맷은 후속 phase의 직렬화 비용에 직접 영향한다. 본 phase에서 한 번 잘못 결정하면 P3~P5 전체에 회귀가 전파되므로 schema는 보수적으로 잡고 zod로 강제한다.
+  </div>
+</section>
+
+<!-- ============================== 2. RALPLAN-DR 요약 ============================== -->
+<section id="sec-dr">
+  <h2>2. RALPLAN-DR 요약</h2>
+
+  <section id="sec-dr-principles">
+    <h3>2.1 Principles (3~5)</h3>
+    <ol>
+      <li><strong>Immutability first</strong> — 모든 CRUD 연산은 새 배열/객체를 반환한다. 입력 array reference는 변하지 않는다. React 친화 패턴이며 P3 WebView 재렌더 트리거를 단순화한다.</li>
+      <li><strong>Schema-as-contract</strong> — 사이드카 파일은 zod로 parse하며 schema 위반 시 throw한다. 사용자가 손으로 편집할 수 있으므로 schema는 readiness gate 역할을 한다.</li>
+      <li><strong>Single source of truth per document</strong> — 한 <code>.md</code> 문서당 하나의 영속화 backend만 활성 (mutually exclusive). 자동 fallback 없음. R-9(실수 commit) 위험은 사용자가 명시적으로 선택한 backend에 한해 발생.</li>
+      <li><strong>Test-first round-trip</strong> — 모델 직렬화 → 디스크 write → 디스크 read → 모델 deep-equal이 통과해야 phase가 종료된다. 측정 가능한 종료 조건은 모두 grep 또는 mocha assert로 검증 가능한 형태로 작성.</li>
+    </ol>
+  </section>
+
+  <section id="sec-dr-drivers">
+    <h3>2.2 Decision Drivers (Top 3)</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Driver</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>D1</td>
+          <td>P3 WebView 재렌더 효율</td>
+          <td>WebView는 코멘트 목록 변화 시 selective re-render가 필요하다. 입력 array가 mutated되면 React/diff 알고리즘이 변경을 감지하지 못하거나 over-render한다. 따라서 immutable CRUD가 필수.</td>
+        </tr>
+        <tr>
+          <td>D2</td>
+          <td>사용자 수동 편집 안전성</td>
+          <td><code>.md.review.json</code> 사이드카는 사용자가 git diff로 보거나 직접 편집 가능하다. 잘못된 JSON 또는 schema 위반이 silently 받아들여지면 P3 UI가 깨진다. zod로 명시적 parse하고 실패 시 한국어 에러로 알림.</td>
+        </tr>
+        <tr>
+          <td>D3</td>
+          <td>2개 backend mutually exclusive</td>
+          <td>사이드카와 workspaceState 둘 다 활성화하면 어느 것을 우선할지 모호하다. R-9 위험(사이드카 git commit) 회피를 위해 workspaceState를 secondary backend로 제공하되, settings로 한쪽만 선택하도록 강제. priority logic 없음.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-options">
+    <h3>2.3 Viable Options (≥2 비교)</h3>
+    <table>
+      <thead>
+        <tr><th>옵션</th><th>설명</th><th>Pros</th><th>Cons</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A. 사이드카 파일(<code>.md.review.json</code>) <span class="tag ok">선택</span></td>
+          <td>각 <code>.md</code> 파일 옆에 동명 <code>.md.review.json</code> 사이드카를 두고 zod 스키마로 직렬화.</td>
+          <td>git friendly, portable, 사용자가 직접 검사 가능, 다른 도구와 상호운용 가능</td>
+          <td>실수로 commit 위험(R-9), 파일 시스템 race condition 가능성, atomic write 필요</td>
+        </tr>
+        <tr>
+          <td>B. VSCode <code>WorkspaceState</code> (Memento) <span class="tag">secondary</span></td>
+          <td>VSCode <code>ExtensionContext.workspaceState</code>에 key=docUri로 저장.</td>
+          <td>사용자가 git에 commit할 위험 없음, VSCode가 관리하므로 atomic, 파일 시스템 의존성 0</td>
+          <td>portability 없음 (다른 머신·다른 IDE에서 사라짐), VSCode 외 도구가 읽을 수 없음, 디버깅 어려움</td>
+        </tr>
+        <tr>
+          <td>C. 본문 안 HTML 주석으로 매립</td>
+          <td><code>&lt;!-- comment:{...} --&gt;</code> 형태로 <code>.md</code> 본문에 직접 삽입.</td>
+          <td>단일 파일, 추가 파일 0개</td>
+          <td>본문 dirty, AnchorResolver가 코멘트 텍스트를 본문으로 오인할 위험, P5 diff가 코멘트 주석까지 비교 대상에 포함</td>
+        </tr>
+        <tr>
+          <td>D. SQLite</td>
+          <td>워크스페이스 단위 단일 DB 파일.</td>
+          <td>쿼리 가능, multi-document 통합 관리 용이</td>
+          <td>1.5d phase 범위 초과, native binding 의존성(node-pty와 같은 ABI 이슈 재발 위험), 사용자가 직접 편집 불가</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sec-dr-rationale">
+    <h3>2.4 선택 근거</h3>
+    <div class="callout info">
+      <strong>Primary: A(Sidecar), Secondary: B(WorkspaceState) — mutually exclusive</strong>
+      A는 git 친화적이고 portable하다는 결정적 장점이 있어 default로 채택한다. R-9(실수 commit) 위험은 README에 <code>.gitignore</code> 권장 패턴을 명시하여 완화한다. 그러나 사이드카가 부담스러운 사용자(예: 본문만 commit하고 코멘트는 로컬에만 두고 싶은 경우)를 위해 B를 secondary backend로 제공한다. 두 backend를 동시 활성화하면 어느 것이 권위 있는지 모호하므로 settings의 <code>mdReview.persistenceBackend</code>로 한쪽만 선택하도록 강제한다 (mutually exclusive). 자동 fallback이나 우선순위 로직은 두지 않는다 — 사용자 명시적 선택만 인정.
+
+      C는 본문 dirty 문제로 즉시 기각. D는 phase 범위 초과 + 의존성 부담으로 기각하되 multi-document 통합 관리가 필요해지면 후속 phase로 재검토.
+    </div>
+  </section>
+</section>
+
+<!-- ============================== 3. Day-by-Day Work Package ============================== -->
+<section id="sec-days">
+  <h2>3. Day-by-Day Work Package</h2>
+
+  <section id="sec-day1" class="day-card">
+    <h3>Day 1 — Comment 모델 + Sidecar 영속화</h3>
+    <p class="meta">예상 소요 1.0 작업일 · 산출물 5개 · 단위 테스트 3종 그룹</p>
+
+    <h4>목표</h4>
+    <p><code>Comment</code> 도메인 타입을 확정하고 zod 스키마를 동일 파일에서 export한다. <code>SidecarPersistence</code>를 구현하여 <code>.md.review.json</code> 파일 단위 round-trip이 동작함을 확인한다. atomic write 패턴(임시 파일 → rename)을 도입하여 partial write로 인한 corruption을 차단한다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/model/Comment.ts</code> — <code>Comment</code> interface + <code>CommentSchema</code>(zod) + <code>CommentsFileSchema</code>(파일 wrapper) + <code>CommentType</code>, <code>CommentAnchor</code> 보조 타입</li>
+      <li><code>src/store/PersistenceBackend.ts</code> — <code>load(docUri): Promise&lt;Comment[]&gt;</code> / <code>save(docUri, comments): Promise&lt;void&gt;</code> 인터페이스 선언 (두 백엔드의 공통 계약)</li>
+      <li><code>src/store/SidecarPersistence.ts</code> — <code>PersistenceBackend</code> 구현, <code>fs/promises</code> 기반, atomic write</li>
+      <li><code>test/store/SidecarPersistence.test.ts</code> — round-trip, schema 실패, atomic 검증, 없는 파일 read 케이스</li>
+      <li><code>src/store/sidecarPath.ts</code> — <code>computeSidecarPath(docUri): string</code> 유틸 (URI → <code>${path}.review.json</code>)</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>본 day의 코드 작성은 main thread에서 직접 수행. 작성 완료 후 <code>code-reviewer</code> agent에 별도 lane으로 리뷰 위임 (자기 자신을 같은 컨텍스트에서 approve 금지 규약).</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>Atomic write 패턴</strong>: <code>writeFile(path + '.tmp', data)</code> → <code>rename(path + '.tmp', path)</code>. <code>rename</code>은 POSIX에서 atomic. 동일 파일 시스템 내에서만 atomic 보장이므로 <code>.tmp</code> 파일은 사이드카와 동일 디렉토리에 둔다.</li>
+      <li><strong>없는 파일 read</strong>: <code>ENOENT</code> 시 빈 배열 반환 (사이드카가 아직 없는 신규 문서는 정상 케이스). 그 외 errno는 throw.</li>
+      <li><strong>JSON parse 실패</strong>: <code>SyntaxError</code> 발생 시 한국어 에러로 wrap (<code>사이드카 JSON parse 실패: ${path}</code>).</li>
+      <li><strong>Schema 위반</strong>: <code>zod</code>의 <code>safeParse</code>를 사용하여 <code>success: false</code> 시 issues를 사람이 읽을 수 있는 한국어 메시지로 변환 (P4 OutputChannel과 동일 패턴).</li>
+      <li><strong>Encoding</strong>: <code>utf-8</code> 명시. BOM은 작성하지 않음. EOL은 LF.</li>
+      <li><strong>Pretty print</strong>: <code>JSON.stringify(data, null, 2)</code> + 끝에 LF 1개. 사용자가 git diff로 가독성 있게 보기 위함.</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep SidecarPersistence</code> exit code 0 (4개 이상 it 블록)</li>
+      <li><input type="checkbox" disabled> Round-trip: <code>const c = sample(); await save(uri, [c]); const r = await load(uri); expect(r).to.deep.equal([c])</code> 통과</li>
+      <li><input type="checkbox" disabled> 없는 파일 load: <code>const r = await load(nonExistent); expect(r).to.deep.equal([])</code> 통과</li>
+      <li><input type="checkbox" disabled> Schema 실패: <code>writeFileSync(uri+'.review.json', '{"version":99}')</code> 후 <code>load</code> → <code>throws</code> assert</li>
+      <li><input type="checkbox" disabled> Atomic write: <code>save</code> 중간에 임의 throw → 원본 파일 unchanged 확인 (<code>fs.readFileSync</code> 값 비교)</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증: <code>! grep -rP '[\x{4E00}-\x{9FFF}]' src/model src/store</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit code 0 (cost-guard 포함)</li>
+    </ul>
+  </section>
+
+  <section id="sec-day15" class="day-card">
+    <h3>Day 1.5 — CommentStore 핵심 + WorkspaceStatePersistence</h3>
+    <p class="meta">예상 소요 0.5 작업일 · 산출물 3개 · 단위 테스트 2종 그룹 + 통합 1종</p>
+
+    <h4>목표</h4>
+    <p>도메인 계층(CommentStore)을 추가하여 immutable CRUD API를 제공하고, P3가 의존할 안정적인 인터페이스를 확정한다. WorkspaceStatePersistence를 두 번째 backend로 구현하고 동일한 round-trip 회귀 테스트를 통과시킨다. 두 backend가 <code>PersistenceBackend</code> 인터페이스를 통해 interchangeable한지 검증한다.</p>
+
+    <h4>산출물</h4>
+    <ul>
+      <li><code>src/store/CommentStore.ts</code> — <code>load(docUri)</code> / <code>save(docUri, comments)</code> / <code>add(comments, draft)</code> / <code>update(comments, id, patch)</code> / <code>remove(comments, id)</code> / <code>list(comments)</code> — 모두 pure function 또는 backend 위임</li>
+      <li><code>src/store/WorkspaceStatePersistence.ts</code> — <code>PersistenceBackend</code> 구현, VSCode <code>Memento</code> 의존성 주입</li>
+      <li><code>src/store/PersistenceBackendFactory.ts</code> — settings의 <code>mdReview.persistenceBackend</code>를 읽어 적절한 backend instance 반환 (mutually exclusive 강제)</li>
+      <li><code>test/store/CommentStore.test.ts</code> — immutability, CRUD 6종, id 충돌 케이스</li>
+      <li><code>test/store/WorkspaceStatePersistence.test.ts</code> — Memento mock으로 round-trip + key naming 검증</li>
+      <li><code>test/store/PersistenceBackend.contract.test.ts</code> — 두 backend를 동일 contract suite로 검증 (interchangeability)</li>
+    </ul>
+
+    <h4>OMC 위임</h4>
+    <p>본 day 끝에 <code>code-reviewer</code> agent 별도 lane spawn — 본 phase 전체(Day 1 + Day 1.5)를 한 번에 리뷰. 발견된 이슈가 있으면 본 phase 안에서 수정 후 종료 조건 재검증.</p>
+
+    <h4>기술 노트</h4>
+    <ul>
+      <li><strong>CRUD signature</strong>: <code>add</code>, <code>update</code>, <code>remove</code>는 <strong>pure function</strong>으로 새 배열 반환. <code>load</code>, <code>save</code>는 backend 위임(side effect). 분리 이유는 단위 테스트에서 backend mock 없이 CRUD 자체를 검증하기 위함.</li>
+      <li><strong>ID 생성</strong>: <code>add</code> 호출 시 <code>id</code>가 비어 있으면 <code>node:crypto.randomUUID()</code>로 생성. caller가 id를 명시하면 그대로 사용 (P3에서 optimistic update 시 client-side id 제공). 중복 id는 <code>add</code>가 <code>throws</code>.</li>
+      <li><strong>Update patch 의미</strong>: <code>update(comments, id, patch)</code>는 <code>{...comment, ...patch, updatedAt: new Date().toISOString()}</code>. <code>id</code>와 <code>createdAt</code>은 patch로 변경 불가 (TypeScript <code>Omit</code>로 강제).</li>
+      <li><strong>WorkspaceState key</strong>: <code>mdReview.comments.${docUriString}</code> 형태. URI는 <code>vscode.Uri.toString()</code> 결과를 그대로 사용 (경로 정규화 책임을 VSCode에 위임).</li>
+      <li><strong>WorkspaceState size 한계</strong>: VSCode <code>Memento</code>는 큰 페이로드에 부적합 (key당 권장 수 KB). 코멘트 수가 많아지면 사이드카로 전환할 것을 README에 명시.</li>
+      <li><strong>Backend factory</strong>: <code>PersistenceBackendFactory.create(config)</code>가 <code>config.persistenceBackend === 'sidecar' ? new SidecarPersistence() : new WorkspaceStatePersistence(memento)</code> 분기. 잘못된 값은 zod에서 사전 거부.</li>
+    </ul>
+
+    <h4>측정 가능한 종료 조건</h4>
+    <ul class="exit-criteria">
+      <li><input type="checkbox" disabled> <code>npm test -- --grep CommentStore</code> exit code 0 (6개 이상 it 블록)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep WorkspaceStatePersistence</code> exit code 0 (3개 이상 it 블록)</li>
+      <li><input type="checkbox" disabled> <code>npm test -- --grep "PersistenceBackend contract"</code> exit code 0 (두 backend 모두에서 동일 suite 통과)</li>
+      <li><input type="checkbox" disabled> Immutability: <code>const before = [c1]; const after = add(before, draft); expect(before).to.not.equal(after); expect(before.length).to.equal(1)</code> 통과</li>
+      <li><input type="checkbox" disabled> Update patch: <code>const u = update([c], c.id, {note: 'x'}); expect(u[0].note).to.equal('x'); expect(u[0].id).to.equal(c.id); expect(u[0].createdAt).to.equal(c.createdAt)</code> 통과</li>
+      <li><input type="checkbox" disabled> Remove pure: <code>const r = remove([c1, c2], c1.id); expect(r).to.deep.equal([c2]); expect(r).to.not.equal(comments)</code> 통과</li>
+      <li><input type="checkbox" disabled> Mutually exclusive: <code>PersistenceBackendFactory.create({persistenceBackend: 'invalid'})</code> → zod throws</li>
+      <li><input type="checkbox" disabled> 전체 <code>npm test</code> exit code 0 (P0 + P1 + P2 합계)</li>
+      <li><input type="checkbox" disabled> <code>npm run compile</code> exit code 0</li>
+      <li><input type="checkbox" disabled> <code>npm run lint</code> exit code 0 (cost-guard 포함)</li>
+      <li><input type="checkbox" disabled> 한자 정적 검증: <code>! grep -rP '[\x{4E00}-\x{9FFF}]' src/ test/</code> exit code 0</li>
+    </ul>
+  </section>
+
+</section>
+
+<!-- ============================== 4. Architecture Diagram ============================== -->
+<section id="sec-arch">
+  <h2>4. Architecture Diagram</h2>
+
+  <div class="ascii">
+P2 데이터 계층 — 모듈 의존도
+
+    +-------------------------------------------------------------+
+    |                    P3 WebView (다음 phase)                  |
+    |            (CustomTextEditor + inline overlay)              |
+    +------------------------------+------------------------------+
+                                   |
+                                   v  (use)
+    +-------------------------------------------------------------+
+    |                        CommentStore                         |
+    |  load() save() add() update() remove() list()               |
+    |  (pure function CRUD + backend 위임 load/save)              |
+    +------+---------------------------------------------+--------+
+           |                                             |
+           v (PersistenceBackend 인터페이스)             v
+    +------------------------+                +------------------------+
+    |  SidecarPersistence    |                | WorkspaceStatePersist  |
+    |  .md.review.json       |                |  ExtensionContext      |
+    |  (default)             |                |  .workspaceState       |
+    |                        |                |  (secondary, opt-in)   |
+    +-----------+------------+                +------------+-----------+
+                |                                          |
+                v                                          v
+    +------------------------+                +------------------------+
+    |  fs/promises           |                |  VSCode Memento API    |
+    |  writeFile/readFile    |                |  get/update            |
+    |  rename (atomic)       |                |                        |
+    +------------------------+                +------------------------+
+
+    +-------------------------------------------------------------+
+    |                       Comment 도메인 모델                   |
+    |  interface Comment { id, type, anchor, before?, after?,     |
+    |                      note?, createdAt, updatedAt? }         |
+    |  CommentSchema (zod), CommentsFileSchema (file wrapper)     |
+    +-------------------------------------------------------------+
+
+    [mutually exclusive 강제]
+       PersistenceBackendFactory.create(config)
+         ├─ config.persistenceBackend === 'sidecar'        → SidecarPersistence
+         └─ config.persistenceBackend === 'workspaceState' → WorkspaceStatePersistence
+         (그 외 값은 zod 단계에서 reject)
+  </div>
+
+  <div class="callout info">
+    <strong>핵심 invariant</strong>
+    <ul>
+      <li>한 문서 단위로 backend는 1개만 활성. priority/fallback 없음.</li>
+      <li><code>CommentStore</code>는 backend 종류를 모른다 — <code>PersistenceBackend</code> 인터페이스에만 의존.</li>
+      <li>도메인 모델은 두 backend 모두에서 동일한 directly-serializable JSON 구조 (Memento도 JSON으로 직렬화됨).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================== 5. Critical Code Specs ============================== -->
+<section id="sec-code">
+  <h2>5. Critical Code Specs</h2>
+
+  <p>본 섹션은 의사 코드가 아니라 실제 구현에 가까운 시그니처와 핵심 분기를 명세한다. 도우미 함수는 생략하고 의미 핵심만 표기한다. 주석은 "왜 이렇게 설계했는가"에 집중한다.</p>
+
+  <section id="sec-code-model">
+    <h3>5.1 <code>src/model/Comment.ts</code> — 도메인 모델 + zod 스키마</h3>
+
+<pre><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="com">// CommentType은 P3 inline UI의 색상/아이콘 매핑과 1:1 대응한다.</span>
+<span class="com">// 향후 'praise' 등을 추가할 가능성이 있어 union으로 열어두되,</span>
+<span class="com">// 현재는 suggestion/question 2가지로 한정한다.</span>
+<span class="kw">export const</span> CommentTypeSchema = z.<span class="fn">enum</span>([<span class="str">'suggestion'</span>, <span class="str">'question'</span>]);
+<span class="kw">export type</span> <span class="typ">CommentType</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> CommentTypeSchema&gt;;
+
+<span class="com">// Anchor는 LSP Position과 호환되도록 0-based로 고정.</span>
+<span class="com">// length는 selection 길이(문자 단위). AnchorResolver(P3)가 채운다.</span>
+<span class="kw">export const</span> CommentAnchorSchema = z.<span class="fn">object</span>({
+  line:   z.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">nonnegative</span>(),
+  col:    z.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">nonnegative</span>(),
+  length: z.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">nonnegative</span>(),
+});
+<span class="kw">export type</span> <span class="typ">CommentAnchor</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> CommentAnchorSchema&gt;;
+
+<span class="com">// Comment는 디스크 저장 형식과 메모리 표현이 동일하다 (직접 직렬화).</span>
+<span class="com">// before/after는 suggestion 타입에서만 의미가 있어 optional로 두지만,</span>
+<span class="com">// PromptBuilder(P4)가 join 시 둘 다 비어있으면 그 코멘트는 prompt에서 제외한다.</span>
+<span class="kw">export const</span> CommentSchema = z.<span class="fn">object</span>({
+  id:        z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="num">1</span>),
+  type:      CommentTypeSchema,
+  anchor:    CommentAnchorSchema,
+  before:    z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  after:     z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  note:      z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  createdAt: z.<span class="fn">string</span>().<span class="fn">datetime</span>(),
+  updatedAt: z.<span class="fn">string</span>().<span class="fn">datetime</span>().<span class="fn">optional</span>(),
+});
+<span class="kw">export type</span> <span class="typ">Comment</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> CommentSchema&gt;;
+
+<span class="com">// 파일 wrapper는 version 필드로 schema 진화를 지원한다.</span>
+<span class="com">// 현재 version은 1. 향후 마이그레이션 시 version 분기 추가 예정.</span>
+<span class="kw">export const</span> COMMENTS_FILE_VERSION = <span class="num">1</span> <span class="kw">as const</span>;
+<span class="kw">export const</span> CommentsFileSchema = z.<span class="fn">object</span>({
+  version:  z.<span class="fn">literal</span>(COMMENTS_FILE_VERSION),
+  comments: z.<span class="fn">array</span>(CommentSchema),
+});
+<span class="kw">export type</span> <span class="typ">CommentsFile</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> CommentsFileSchema&gt;;
+
+<span class="com">// add 단계에서 사용되는 draft 타입 — id/createdAt은 store가 채움.</span>
+<span class="kw">export type</span> <span class="typ">CommentDraft</span> = <span class="typ">Omit</span>&lt;<span class="typ">Comment</span>, <span class="str">'id'</span> | <span class="str">'createdAt'</span> | <span class="str">'updatedAt'</span>&gt; &amp; { id?: <span class="typ">string</span> };
+
+<span class="com">// update 단계에서 사용되는 patch 타입 — id/createdAt은 변경 불가.</span>
+<span class="kw">export type</span> <span class="typ">CommentPatch</span> = <span class="typ">Partial</span>&lt;<span class="typ">Omit</span>&lt;<span class="typ">Comment</span>, <span class="str">'id'</span> | <span class="str">'createdAt'</span> | <span class="str">'updatedAt'</span>&gt;&gt;;
+</pre>
+  </section>
+
+  <section id="sec-code-sidecar">
+    <h3>5.2 <code>src/store/SidecarPersistence.ts</code> — 사이드카 파일 영속화</h3>
+
+<pre><span class="kw">import</span> { promises <span class="kw">as</span> fs } <span class="kw">from</span> <span class="str">'fs'</span>;
+<span class="kw">import</span> { dirname, basename, join } <span class="kw">from</span> <span class="str">'path'</span>;
+<span class="kw">import</span> { fileURLToPath } <span class="kw">from</span> <span class="str">'url'</span>;
+<span class="kw">import</span> {
+  CommentsFileSchema, COMMENTS_FILE_VERSION,
+  <span class="kw">type</span> <span class="typ">Comment</span>, <span class="kw">type</span> <span class="typ">CommentsFile</span>,
+} <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">PersistenceBackend</span> } <span class="kw">from</span> <span class="str">'./PersistenceBackend'</span>;
+
+<span class="com">// 사이드카 경로 계산을 별도 함수로 분리하여 단위 테스트 가능하게 함.</span>
+<span class="com">// docUri는 file:// 스킴 또는 절대 경로 문자열 둘 다 지원.</span>
+<span class="kw">export function</span> <span class="fn">computeSidecarPath</span>(docUri: <span class="typ">string</span>): <span class="typ">string</span> {
+  <span class="kw">const</span> p = docUri.<span class="fn">startsWith</span>(<span class="str">'file://'</span>) ? <span class="fn">fileURLToPath</span>(docUri) : docUri;
+  <span class="kw">return</span> `${p}.review.json`;
+}
+
+<span class="kw">export class</span> <span class="typ">SidecarPersistence</span> <span class="kw">implements</span> <span class="typ">PersistenceBackend</span> {
+  <span class="kw">readonly</span> backendName = <span class="str">'sidecar'</span> <span class="kw">as const</span>;
+
+  <span class="kw">async</span> <span class="fn">load</span>(docUri: <span class="typ">string</span>): <span class="typ">Promise</span>&lt;<span class="typ">Comment</span>[]&gt; {
+    <span class="kw">const</span> path = <span class="fn">computeSidecarPath</span>(docUri);
+    <span class="kw">let</span> raw: <span class="typ">string</span>;
+    <span class="kw">try</span> {
+      raw = <span class="kw">await</span> fs.<span class="fn">readFile</span>(path, <span class="str">'utf-8'</span>);
+    } <span class="kw">catch</span> (err: <span class="typ">unknown</span>) {
+      <span class="com">// ENOENT는 신규 문서 정상 케이스 — 빈 배열 반환.</span>
+      <span class="com">// 그 외 (권한, I/O 에러)는 의도된 throw로 caller에 전달.</span>
+      <span class="kw">if</span> (<span class="fn">isENOENT</span>(err)) <span class="kw">return</span> [];
+      <span class="kw">throw</span> err;
+    }
+
+    <span class="kw">let</span> parsed: <span class="typ">unknown</span>;
+    <span class="kw">try</span> {
+      parsed = <span class="typ">JSON</span>.<span class="fn">parse</span>(raw);
+    } <span class="kw">catch</span> (e: <span class="typ">unknown</span>) {
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`사이드카 JSON parse 실패: ${path}`);
+    }
+
+    <span class="kw">const</span> result = CommentsFileSchema.<span class="fn">safeParse</span>(parsed);
+    <span class="kw">if</span> (!result.success) {
+      <span class="com">// zod issue를 사람이 읽을 수 있는 한국어 메시지로 정리.</span>
+      <span class="kw">const</span> issues = result.error.issues
+        .<span class="fn">map</span>(i =&gt; `  - ${i.path.<span class="fn">join</span>(<span class="str">'.'</span>)}: ${i.message}`)
+        .<span class="fn">join</span>(<span class="str">'\n'</span>);
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`사이드카 schema 검증 실패 (${path}):\n${issues}`);
+    }
+    <span class="kw">return</span> result.data.comments;
+  }
+
+  <span class="kw">async</span> <span class="fn">save</span>(docUri: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt; {
+    <span class="kw">const</span> path = <span class="fn">computeSidecarPath</span>(docUri);
+    <span class="kw">const</span> file: <span class="typ">CommentsFile</span> = {
+      version: COMMENTS_FILE_VERSION,
+      comments: [...comments],
+    };
+    <span class="kw">const</span> serialized = <span class="typ">JSON</span>.<span class="fn">stringify</span>(file, <span class="kw">null</span>, <span class="num">2</span>) + <span class="str">'\n'</span>;
+
+    <span class="com">// Atomic write: 같은 디렉토리에 .tmp 파일을 쓴 뒤 rename으로 교체.</span>
+    <span class="com">// 같은 파일 시스템 안에서 rename은 POSIX atomic이므로</span>
+    <span class="com">// 도중에 프로세스가 죽어도 원본은 corrupt되지 않는다.</span>
+    <span class="kw">const</span> tmp = `${path}.${<span class="fn">randomSuffix</span>()}.tmp`;
+    <span class="kw">await</span> fs.<span class="fn">writeFile</span>(tmp, serialized, { encoding: <span class="str">'utf-8'</span> });
+    <span class="kw">await</span> fs.<span class="fn">rename</span>(tmp, path);
+  }
+}
+
+<span class="kw">function</span> <span class="fn">isENOENT</span>(err: <span class="typ">unknown</span>): <span class="typ">boolean</span> {
+  <span class="kw">return</span> <span class="kw">typeof</span> err === <span class="str">'object'</span> &amp;&amp; err !== <span class="kw">null</span> &amp;&amp; (err <span class="kw">as</span> { code?: <span class="typ">string</span> }).code === <span class="str">'ENOENT'</span>;
+}
+
+<span class="kw">function</span> <span class="fn">randomSuffix</span>(): <span class="typ">string</span> {
+  <span class="kw">return</span> <span class="typ">Math</span>.<span class="fn">random</span>().<span class="fn">toString</span>(<span class="num">36</span>).<span class="fn">slice</span>(<span class="num">2</span>, <span class="num">8</span>);
+}
+</pre>
+  </section>
+
+  <section id="sec-code-wsstate">
+    <h3>5.3 <code>src/store/WorkspaceStatePersistence.ts</code> — VSCode Memento 영속화</h3>
+
+<pre><span class="kw">import</span> {
+  CommentSchema, <span class="kw">type</span> <span class="typ">Comment</span>,
+} <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">PersistenceBackend</span> } <span class="kw">from</span> <span class="str">'./PersistenceBackend'</span>;
+
+<span class="com">// Memento를 직접 import하지 않고 인터페이스로 추상화하여</span>
+<span class="com">// 단위 테스트에서 fake 객체로 주입 가능하게 함.</span>
+<span class="kw">export interface</span> <span class="typ">MementoLike</span> {
+  <span class="fn">get</span>&lt;<span class="typ">T</span>&gt;(key: <span class="typ">string</span>): <span class="typ">T</span> | <span class="typ">undefined</span>;
+  <span class="fn">update</span>(key: <span class="typ">string</span>, value: <span class="typ">unknown</span>): <span class="typ">Thenable</span>&lt;<span class="typ">void</span>&gt;;
+}
+
+<span class="kw">type</span> <span class="typ">Thenable</span>&lt;<span class="typ">T</span>&gt; = <span class="typ">Promise</span>&lt;<span class="typ">T</span>&gt; | { <span class="fn">then</span>: (resolve: (v: <span class="typ">T</span>) =&gt; <span class="typ">void</span>) =&gt; <span class="typ">void</span> };
+
+<span class="kw">const</span> StoredCommentsSchema = z.<span class="fn">array</span>(CommentSchema);
+
+<span class="kw">export class</span> <span class="typ">WorkspaceStatePersistence</span> <span class="kw">implements</span> <span class="typ">PersistenceBackend</span> {
+  <span class="kw">readonly</span> backendName = <span class="str">'workspaceState'</span> <span class="kw">as const</span>;
+
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> memento: <span class="typ">MementoLike</span>) {}
+
+  <span class="kw">async</span> <span class="fn">load</span>(docUri: <span class="typ">string</span>): <span class="typ">Promise</span>&lt;<span class="typ">Comment</span>[]&gt; {
+    <span class="kw">const</span> key = <span class="fn">computeKey</span>(docUri);
+    <span class="kw">const</span> raw = <span class="kw">this</span>.memento.<span class="fn">get</span>&lt;<span class="typ">unknown</span>&gt;(key);
+    <span class="kw">if</span> (raw === <span class="typ">undefined</span>) <span class="kw">return</span> [];
+
+    <span class="kw">const</span> result = StoredCommentsSchema.<span class="fn">safeParse</span>(raw);
+    <span class="kw">if</span> (!result.success) {
+      <span class="kw">throw new</span> <span class="typ">Error</span>(
+        `workspaceState 코멘트 schema 검증 실패 (key=${key}): ${result.error.message}`
+      );
+    }
+    <span class="kw">return</span> result.data;
+  }
+
+  <span class="kw">async</span> <span class="fn">save</span>(docUri: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt; {
+    <span class="kw">const</span> key = <span class="fn">computeKey</span>(docUri);
+    <span class="com">// Memento의 update는 JSON 직렬화 가능한 값만 허용.</span>
+    <span class="com">// Comment 타입은 모두 primitive/string이므로 안전.</span>
+    <span class="kw">await</span> <span class="typ">Promise</span>.<span class="fn">resolve</span>(<span class="kw">this</span>.memento.<span class="fn">update</span>(key, [...comments]));
+  }
+}
+
+<span class="kw">function</span> <span class="fn">computeKey</span>(docUri: <span class="typ">string</span>): <span class="typ">string</span> {
+  <span class="com">// docUri는 vscode.Uri.toString() 결과를 그대로 사용.</span>
+  <span class="com">// 경로 정규화 책임은 VSCode에 위임 (file:///foo == file:///foo는 VSCode가 보장).</span>
+  <span class="kw">return</span> `mdReview.comments.${docUri}`;
+}
+</pre>
+  </section>
+
+  <section id="sec-code-store">
+    <h3>5.4 <code>src/store/CommentStore.ts</code> — Immutable CRUD 핵심</h3>
+
+<pre><span class="kw">import</span> { randomUUID } <span class="kw">from</span> <span class="str">'crypto'</span>;
+<span class="kw">import</span> {
+  <span class="kw">type</span> <span class="typ">Comment</span>, <span class="kw">type</span> <span class="typ">CommentDraft</span>, <span class="kw">type</span> <span class="typ">CommentPatch</span>,
+} <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">PersistenceBackend</span> } <span class="kw">from</span> <span class="str">'./PersistenceBackend'</span>;
+
+<span class="com">// CommentStore는 두 책임을 가진다:</span>
+<span class="com">//   1) Pure function CRUD (add/update/remove/list) — backend 비의존</span>
+<span class="com">//   2) Backend 위임 (load/save) — disk/memento I/O</span>
+<span class="com">// 분리 이유: CRUD 자체는 backend mock 없이 단위 테스트 가능해야 함.</span>
+<span class="kw">export class</span> <span class="typ">CommentStore</span> {
+  <span class="kw">constructor</span>(<span class="kw">private readonly</span> backend: <span class="typ">PersistenceBackend</span>) {}
+
+  <span class="kw">async</span> <span class="fn">load</span>(docUri: <span class="typ">string</span>): <span class="typ">Promise</span>&lt;<span class="typ">Comment</span>[]&gt; {
+    <span class="kw">return</span> <span class="kw">this</span>.backend.<span class="fn">load</span>(docUri);
+  }
+
+  <span class="kw">async</span> <span class="fn">save</span>(docUri: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt; {
+    <span class="kw">return</span> <span class="kw">this</span>.backend.<span class="fn">save</span>(docUri, comments);
+  }
+
+  <span class="com">// Pure: 새 배열 반환, 입력 array reference 변경 없음.</span>
+  <span class="fn">add</span>(comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[], draft: <span class="typ">CommentDraft</span>): <span class="typ">Comment</span>[] {
+    <span class="kw">const</span> id = draft.id ?? <span class="fn">randomUUID</span>();
+    <span class="kw">if</span> (comments.<span class="fn">some</span>(c =&gt; c.id === id)) {
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`코멘트 id 충돌: ${id}`);
+    }
+    <span class="kw">const</span> now = <span class="kw">new</span> <span class="typ">Date</span>().<span class="fn">toISOString</span>();
+    <span class="kw">const</span> created: <span class="typ">Comment</span> = {
+      ...draft,
+      id,
+      createdAt: now,
+    };
+    <span class="kw">return</span> [...comments, created];
+  }
+
+  <span class="com">// Pure: id로 찾아 patch 병합. createdAt은 보존, updatedAt 갱신.</span>
+  <span class="fn">update</span>(
+    comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[],
+    id: <span class="typ">string</span>,
+    patch: <span class="typ">CommentPatch</span>,
+  ): <span class="typ">Comment</span>[] {
+    <span class="kw">const</span> idx = comments.<span class="fn">findIndex</span>(c =&gt; c.id === id);
+    <span class="kw">if</span> (idx === -<span class="num">1</span>) {
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`코멘트를 찾을 수 없음: id=${id}`);
+    }
+    <span class="kw">const</span> next: <span class="typ">Comment</span> = {
+      ...comments[idx],
+      ...patch,
+      id: comments[idx].id,
+      createdAt: comments[idx].createdAt,
+      updatedAt: <span class="kw">new</span> <span class="typ">Date</span>().<span class="fn">toISOString</span>(),
+    };
+    <span class="kw">return</span> [...comments.<span class="fn">slice</span>(<span class="num">0</span>, idx), next, ...comments.<span class="fn">slice</span>(idx + <span class="num">1</span>)];
+  }
+
+  <span class="com">// Pure: id 일치 항목 제거. 없으면 throw (idempotent하지 않음).</span>
+  <span class="com">// 이유는 P3 UI가 사용자 확인 후 명시적으로 remove하기 때문에 silent miss를 막아야 함.</span>
+  <span class="fn">remove</span>(comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[], id: <span class="typ">string</span>): <span class="typ">Comment</span>[] {
+    <span class="kw">const</span> next = comments.<span class="fn">filter</span>(c =&gt; c.id !== id);
+    <span class="kw">if</span> (next.length === comments.length) {
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`삭제할 코멘트를 찾을 수 없음: id=${id}`);
+    }
+    <span class="kw">return</span> next;
+  }
+
+  <span class="com">// list는 의도적으로 readonly 사본을 반환 — caller가 외부에서 mutate 하지 못하게 보호.</span>
+  <span class="fn">list</span>(comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">readonly</span> <span class="typ">Comment</span>[] {
+    <span class="kw">return</span> [...comments];
+  }
+}
+</pre>
+  </section>
+
+  <h3 id="sec-code-backend">5.5 <code>src/store/PersistenceBackend.ts</code> — 공통 계약</h3>
+
+<pre><span class="kw">import</span> { <span class="kw">type</span> <span class="typ">Comment</span> } <span class="kw">from</span> <span class="str">'../model/Comment'</span>;
+
+<span class="com">// 두 backend가 interchangeable함을 컴파일 타임에 보장한다.</span>
+<span class="com">// backendName은 디버그 로그에서 어느 backend가 실패했는지 식별 용도.</span>
+<span class="kw">export interface</span> <span class="typ">PersistenceBackend</span> {
+  <span class="kw">readonly</span> backendName: <span class="str">'sidecar'</span> | <span class="str">'workspaceState'</span>;
+  <span class="fn">load</span>(docUri: <span class="typ">string</span>): <span class="typ">Promise</span>&lt;<span class="typ">Comment</span>[]&gt;;
+  <span class="fn">save</span>(docUri: <span class="typ">string</span>, comments: <span class="typ">readonly</span> <span class="typ">Comment</span>[]): <span class="typ">Promise</span>&lt;<span class="typ">void</span>&gt;;
+}
+</pre>
+
+  <h3 id="sec-code-factory">5.6 <code>src/store/PersistenceBackendFactory.ts</code> — Mutually exclusive 강제</h3>
+
+<pre><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+<span class="kw">import</span> { SidecarPersistence } <span class="kw">from</span> <span class="str">'./SidecarPersistence'</span>;
+<span class="kw">import</span> {
+  WorkspaceStatePersistence, <span class="kw">type</span> <span class="typ">MementoLike</span>,
+} <span class="kw">from</span> <span class="str">'./WorkspaceStatePersistence'</span>;
+<span class="kw">import</span> { <span class="kw">type</span> <span class="typ">PersistenceBackend</span> } <span class="kw">from</span> <span class="str">'./PersistenceBackend'</span>;
+
+<span class="kw">export const</span> PersistenceBackendKindSchema = z.<span class="fn">enum</span>([<span class="str">'sidecar'</span>, <span class="str">'workspaceState'</span>]);
+<span class="kw">export type</span> <span class="typ">PersistenceBackendKind</span> = z.<span class="typ">infer</span>&lt;<span class="kw">typeof</span> PersistenceBackendKindSchema&gt;;
+
+<span class="kw">export interface</span> <span class="typ">PersistenceBackendFactoryDeps</span> {
+  memento: <span class="typ">MementoLike</span>;
+}
+
+<span class="com">// settings에서 두 값이 동시에 truthy인 경우는 zod enum이 사전 거부.</span>
+<span class="com">// 잘못된 값 ('both', 'auto' 등)도 enum 검증에서 throw.</span>
+<span class="com">// priority/fallback 로직은 도입하지 않는다 — 사용자 명시적 선택만 인정.</span>
+<span class="kw">export function</span> <span class="fn">createPersistenceBackend</span>(
+  kind: <span class="typ">PersistenceBackendKind</span>,
+  deps: <span class="typ">PersistenceBackendFactoryDeps</span>,
+): <span class="typ">PersistenceBackend</span> {
+  <span class="kw">const</span> validated = PersistenceBackendKindSchema.<span class="fn">parse</span>(kind);
+  <span class="kw">switch</span> (validated) {
+    <span class="kw">case</span> <span class="str">'sidecar'</span>:
+      <span class="kw">return new</span> <span class="fn">SidecarPersistence</span>();
+    <span class="kw">case</span> <span class="str">'workspaceState'</span>:
+      <span class="kw">return new</span> <span class="fn">WorkspaceStatePersistence</span>(deps.memento);
+    <span class="kw">default</span>: {
+      <span class="com">// exhaustive switch — 새 backend 추가 시 컴파일 에러로 누락 방지.</span>
+      <span class="kw">const</span> _exhaustive: <span class="kw">never</span> = validated;
+      <span class="kw">throw new</span> <span class="typ">Error</span>(`알 수 없는 persistence backend: ${_exhaustive}`);
+    }
+  }
+}
+</pre>
+</section>
+
+<!-- ============================== 6. ADR 운영화 ============================== -->
+<section id="sec-adr">
+  <h2>6. ADR 운영화</h2>
+
+  <p>마스터 계획서 § ADR과 정합되도록 본 phase의 결정 사항을 정책으로 운영화한다.</p>
+
+  <table>
+    <thead>
+      <tr><th>마스터 ADR 항목</th><th>P2에서의 적용</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AD-1: 데이터 모델은 client/server interchangeable JSON</td>
+        <td>Comment 타입을 메모리/디스크/Memento 모두 동일 구조로 정의. 비직렬화 가능한 필드(<code>Date</code> 인스턴스 등) 금지. <code>createdAt</code>은 ISO 8601 문자열로 통일.</td>
+      </tr>
+      <tr>
+        <td>AD-2: 영속화 backend는 명시적 선택 (mutually exclusive)</td>
+        <td><code>PersistenceBackendFactory</code>가 zod enum으로 강제. priority/fallback 없음. settings 변경은 reload 후에만 반영 (P4 ProviderConfig와 동일 패턴).</td>
+      </tr>
+      <tr>
+        <td>AD-3: 모든 외부 입력은 zod로 검증</td>
+        <td>사이드카 파일과 Memento 값 모두 <code>safeParse</code>로 검증. schema 실패는 한국어 에러로 wrap.</td>
+      </tr>
+      <tr>
+        <td>AD-4: Immutability는 React 친화 표현</td>
+        <td>모든 CRUD는 새 배열 반환. <code>readonly Comment[]</code> 타입으로 caller도 mutate 불가하게 강제.</td>
+      </tr>
+      <tr>
+        <td>AD-5: VSCode API는 의존성 주입으로 추상화</td>
+        <td><code>Memento</code>를 <code>MementoLike</code> 인터페이스로 wrap. 단위 테스트에서 fake 객체로 주입 가능.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <strong>운영화 효과</strong>
+    위 ADR을 본 phase에서 강제함으로써 P3 WebView 측에서 다음을 가정할 수 있다: (a) <code>CommentStore</code>가 던지는 객체는 zod 검증 통과 후 반환된 것이므로 추가 validation 불필요, (b) 모든 CRUD는 새 배열 reference를 반환하므로 React/diff 알고리즘이 변화를 감지 가능, (c) 두 backend의 동작은 동일 contract suite로 검증되었으므로 backend 종류와 무관하게 동작 보장.
+  </div>
+</section>
+
+<!-- ============================== 7. JSON Persistence Schema ============================== -->
+<section id="sec-schema">
+  <h2>7. JSON Persistence Schema (P2 특수 섹션)</h2>
+
+  <h3>7.1 사이드카 파일 형식 (<code>{document}.review.json</code>)</h3>
+
+<pre>{
+  <span class="str">"version"</span>: <span class="num">1</span>,
+  <span class="str">"comments"</span>: [
+    {
+      <span class="str">"id"</span>: <span class="str">"019015f5-7c18-7000-8000-000000000001"</span>,
+      <span class="str">"type"</span>: <span class="str">"suggestion"</span>,
+      <span class="str">"anchor"</span>: { <span class="str">"line"</span>: <span class="num">42</span>, <span class="str">"col"</span>: <span class="num">10</span>, <span class="str">"length"</span>: <span class="num">18</span> },
+      <span class="str">"before"</span>: <span class="str">"electron-manager"</span>,
+      <span class="str">"after"</span>: <span class="str">"local-cli-manager"</span>,
+      <span class="str">"note"</span>: <span class="str">"패키지 이름이 의도와 다름"</span>,
+      <span class="str">"createdAt"</span>: <span class="str">"2026-05-15T10:00:00.000Z"</span>
+    },
+    {
+      <span class="str">"id"</span>: <span class="str">"019015f5-7c18-7000-8000-000000000002"</span>,
+      <span class="str">"type"</span>: <span class="str">"question"</span>,
+      <span class="str">"anchor"</span>: { <span class="str">"line"</span>: <span class="num">88</span>, <span class="str">"col"</span>: <span class="num">0</span>, <span class="str">"length"</span>: <span class="num">0</span> },
+      <span class="str">"note"</span>: <span class="str">"이 단락의 출처는?"</span>,
+      <span class="str">"createdAt"</span>: <span class="str">"2026-05-15T10:05:30.000Z"</span>
+    }
+  ]
+}
+</pre>
+
+  <h3>7.2 Memento 저장 형식 (WorkspaceState backend)</h3>
+
+<pre><span class="com">// key: "mdReview.comments.file:///abs/path/to/doc.md"</span>
+[
+  {
+    <span class="str">"id"</span>: <span class="str">"019015f5-..."</span>,
+    <span class="str">"type"</span>: <span class="str">"suggestion"</span>,
+    <span class="com">// ... Comment 그대로</span>
+  }
+]
+<span class="com">// 사이드카와 달리 wrapper(version + comments) 없이 배열만 저장.</span>
+<span class="com">// 이유: Memento는 key-value이므로 version은 별도 key로 관리할 수 있고</span>
+<span class="com">//       현재는 단일 schema이므로 wrapper가 불필요한 nesting을 만들 뿐.</span>
+</pre>
+
+  <h3>7.3 필드 의미 표</h3>
+
+  <table>
+    <thead>
+      <tr><th>필드</th><th>타입</th><th>required</th><th>의미 및 제약</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>string</td><td>yes</td><td>UUID v4 (또는 client 제공). 한 문서 안에서 unique.</td></tr>
+      <tr><td><code>type</code></td><td><code>'suggestion' | 'question'</code></td><td>yes</td><td>P3 UI의 색상/아이콘 결정. P4 PromptBuilder의 코멘트 join 형식 결정.</td></tr>
+      <tr><td><code>anchor.line</code></td><td>int ≥ 0</td><td>yes</td><td>0-based 행 번호 (LSP Position 호환).</td></tr>
+      <tr><td><code>anchor.col</code></td><td>int ≥ 0</td><td>yes</td><td>0-based 열 번호. UTF-16 code unit 기준 (VSCode 표준).</td></tr>
+      <tr><td><code>anchor.length</code></td><td>int ≥ 0</td><td>yes</td><td>selection 길이. point comment(question)는 0 가능.</td></tr>
+      <tr><td><code>before</code></td><td>string</td><td>no</td><td>suggestion 원문 (선택 구간 텍스트 사본).</td></tr>
+      <tr><td><code>after</code></td><td>string</td><td>no</td><td>suggestion 제안 본문. before와 함께 P4가 diff 지시로 송신.</td></tr>
+      <tr><td><code>note</code></td><td>string</td><td>no</td><td>사용자 자유 텍스트. question 코멘트의 핵심 본문.</td></tr>
+      <tr><td><code>createdAt</code></td><td>ISO 8601</td><td>yes</td><td>UTC. <code>new Date().toISOString()</code> 형식.</td></tr>
+      <tr><td><code>updatedAt</code></td><td>ISO 8601</td><td>no</td><td><code>update</code> 호출 시 갱신. 최초 생성 직후에는 없음.</td></tr>
+      <tr><td><code>version</code> (file-level)</td><td>literal 1</td><td>yes</td><td>현재 1. 향후 migration 시 분기 기준.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.4 Schema 진화 정책</h3>
+
+  <div class="callout warn">
+    <strong>마이그레이션 전략 (현재 미적용, 미래 대비 명시)</strong>
+    <ul>
+      <li>v1 → v2 진화 시: <code>load</code> 단계에서 version 분기를 두고 v1 객체를 v2로 변환. 변환 직후 디스크에 v2로 save (자동 migration).</li>
+      <li>Breaking change(필드 삭제, 타입 변경)는 새 version으로 분리. 동일 version 안에서는 backward compatible field 추가만.</li>
+      <li>v2 이상의 backend에서 v1 사이드카를 만나면 warning 로그 + 자동 migration.</li>
+      <li>본 phase 범위: <strong>v1만 구현</strong>. migration 로직은 후속 phase 진입 조건에 포함.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================== 8. Acceptance Criteria ============================== -->
+<section id="sec-ac">
+  <h2>8. Acceptance Criteria</h2>
+
+  <p>마스터 계획서의 AC 중 본 phase가 책임지는 항목은 <strong>AC-4(코멘트 영속화)</strong>이며, P3/P4가 의존하는 데이터 계약(<strong>AC-2/AC-3</strong>의 underlying data)도 본 phase에서 갖춰진다. 본 phase 단독 검증 가능한 acceptance를 아래에 재진술한다.</p>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>기준</th><th>검증 일자</th><th>검증 절차</th><th>통과</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>P2-AC-1</td>
+        <td>Comment 타입은 zod 스키마와 일치 (<code>z.infer</code> 도출 사용)</td>
+        <td>Day 1</td>
+        <td><code>npm run compile</code> exit code 0 + <code>src/model/Comment.ts</code>에 <code>type Comment = z.infer&lt;typeof CommentSchema&gt;</code> 패턴 존재 (grep 검증)</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-2</td>
+        <td>SidecarPersistence round-trip (save → load → deep-equal)</td>
+        <td>Day 1</td>
+        <td><code>npm test -- --grep "SidecarPersistence round-trip"</code> exit code 0. <code>chai.expect(loaded).to.deep.equal(originalArray)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-3</td>
+        <td>SidecarPersistence ENOENT 처리 (없는 파일 → 빈 배열)</td>
+        <td>Day 1</td>
+        <td><code>npm test -- --grep "SidecarPersistence missing"</code> exit code 0. <code>expect(loaded).to.deep.equal([])</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-4</td>
+        <td>SidecarPersistence schema 위반 시 한국어 에러 throw</td>
+        <td>Day 1</td>
+        <td><code>npm test -- --grep "SidecarPersistence schema"</code> exit code 0. <code>expect(() =&gt; load(corruptedPath)).to.throw(/사이드카 schema 검증 실패/)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-5</td>
+        <td>SidecarPersistence atomic write (도중 throw → 원본 unchanged)</td>
+        <td>Day 1</td>
+        <td><code>npm test -- --grep "SidecarPersistence atomic"</code> exit code 0. stub으로 rename 단계에서 throw 유도 + <code>fs.readFileSync(path, 'utf-8')</code> 원본 그대로 assert.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-6</td>
+        <td>CommentStore.add immutability (입력 배열 reference 보존)</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "CommentStore add immutable"</code> exit code 0. <code>const before = [c1]; const after = store.add(before, d); expect(before).to.not.equal(after); expect(before.length).to.equal(1)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-7</td>
+        <td>CommentStore.update id/createdAt 보존</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "CommentStore update preserves"</code> exit code 0. <code>const u = store.update([c], c.id, {note: 'x'}); expect(u[0].id).to.equal(c.id); expect(u[0].createdAt).to.equal(c.createdAt); expect(u[0].updatedAt).to.not.equal(undefined)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-8</td>
+        <td>CommentStore.remove id 미존재 시 throw</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "CommentStore remove missing"</code> exit code 0. <code>expect(() =&gt; store.remove([], 'nope')).to.throw(/삭제할 코멘트를 찾을 수 없음/)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-9</td>
+        <td>WorkspaceStatePersistence round-trip (Memento mock)</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "WorkspaceStatePersistence round-trip"</code> exit code 0. fake Memento (Map 기반)으로 save → load → deep-equal.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-10</td>
+        <td>PersistenceBackend contract: 두 backend 동일 suite 통과</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "PersistenceBackend contract"</code> exit code 0. 동일 it 블록 6개를 sidecar/workspaceState 각각 실행하여 모두 green.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-11</td>
+        <td>Factory mutually exclusive: 잘못된 kind는 zod throw</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "PersistenceBackendFactory"</code> exit code 0. <code>expect(() =&gt; createPersistenceBackend('both', deps)).to.throw(/ZodError|Invalid enum/)</code> 통과.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-12</td>
+        <td>한자 정적 검증</td>
+        <td>Day 1.5</td>
+        <td><code>! grep -rP '[\x{4E00}-\x{9FFF}]' src/model src/store test/store</code> exit code 0 (zero match).</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-13</td>
+        <td>cost-guard 회귀 방지 (P1에서 추가된 lint가 P2 후에도 통과)</td>
+        <td>Day 1.5</td>
+        <td><code>npm run lint:cost-guard</code> exit code 0.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+      <tr>
+        <td>P2-AC-14</td>
+        <td>마스터 AC-4 데이터 계층 부분 (round-trip 영속)</td>
+        <td>Day 1.5</td>
+        <td><code>npm test -- --grep "P2"</code> 또는 전체 <code>npm test</code> 안에서 sidecar + workspaceState round-trip 모두 green. 마스터 AC-4의 P3 통합 검증은 P3 phase로 위임.</td>
+        <td><input type="checkbox" disabled></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================== 9. Risks & Mitigations ============================== -->
+<section id="sec-risks">
+  <h2>9. Risks & Mitigations</h2>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>위험</th><th>가능성</th><th>영향</th><th>완화</th><th>책임</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>P2-R-1</td>
+        <td>사이드카 <code>.md.review.json</code>을 사용자가 실수로 git에 commit (마스터 R-9 운영화)</td>
+        <td>중</td>
+        <td>낮음</td>
+        <td>README에 <code>.gitignore</code> 권장 패턴 명시(<code>*.review.json</code>). 사용자가 git에 두기 원하면 명시적 unignore 권장. backend factory가 첫 save 시 OutputChannel에 사이드카 경로를 1회 로그하여 사용자가 인지하게 함.</td>
+        <td>P2 (구현 + README)</td>
+      </tr>
+      <tr>
+        <td>P2-R-2</td>
+        <td>Atomic write 중 동일 디렉토리 권한 부족으로 <code>.tmp</code> 생성 실패</td>
+        <td>낮음</td>
+        <td>중</td>
+        <td><code>writeFile</code> 시 errno EACCES/EPERM은 그대로 throw하고 한국어 에러로 wrap (<code>사이드카 쓰기 권한 없음</code>). README에 workspace 권한 가정 명시.</td>
+        <td>P2</td>
+      </tr>
+      <tr>
+        <td>P2-R-3</td>
+        <td>대용량 코멘트(수백 개) 시 Memento backend 성능 저하</td>
+        <td>낮음</td>
+        <td>낮음</td>
+        <td>Memento는 key당 권장 수 KB. 사용자가 수백 코멘트를 한 문서에 다는 케이스는 드물지만, README에 사이드카 권장 임계치 명시(예: 50+ 코멘트는 사이드카로). 측정은 P3 통합 단계에서.</td>
+        <td>P2 (README), P3 (실측)</td>
+      </tr>
+      <tr>
+        <td>P2-R-4</td>
+        <td>WorkspaceState key가 docUri 변경(파일 이동/rename)에 대응하지 못함</td>
+        <td>중</td>
+        <td>중</td>
+        <td>본 phase 범위 외 — VSCode의 <code>workspace.onDidRenameFiles</code>를 P3에서 hook하여 key 마이그레이션 처리. P2는 key 형식만 안정화하여 P3가 이를 활용할 수 있도록 함.</td>
+        <td>P2 (계약), P3 (rename 핸들러)</td>
+      </tr>
+      <tr>
+        <td>P2-R-5</td>
+        <td>zod schema 버전 진화 시 backward compatibility 깨짐</td>
+        <td>낮음</td>
+        <td>중</td>
+        <td><code>version</code> 필드를 file wrapper에 두고 load 단계에서 version 분기 도입(현재는 v1만). breaking change는 새 version으로만. AC-4 schema 진화 정책(§ 7.4) 준수.</td>
+        <td>P2 + 후속 phase</td>
+      </tr>
+      <tr>
+        <td>P2-R-6</td>
+        <td>임시 파일(<code>.tmp</code>) leak — atomic write 도중 프로세스 kill되면 <code>.tmp</code>가 남음</td>
+        <td>낮음</td>
+        <td>낮음</td>
+        <td>random suffix를 붙여 충돌 방지. cleanup은 best-effort (도중 죽으면 다음 save 때 새 suffix로 재시도). README에 trailing <code>.tmp</code> 발견 시 수동 삭제 가능 명시.</td>
+        <td>P2</td>
+      </tr>
+      <tr>
+        <td>P2-R-7</td>
+        <td>UTF-16 col 단위 vs 사용자 표시 col 차이 (서로게이트 쌍, emoji)</td>
+        <td>낮음</td>
+        <td>중</td>
+        <td>P2는 AnchorResolver(P3 소관)에서 발생할 이슈를 데이터 계약 차원에서만 받아들임. col은 "VSCode가 보고하는 col 단위 그대로 저장"으로 명시. 변환은 P3가 책임.</td>
+        <td>P3</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>마스터 Risk Register와의 정합</strong>
+    P2-R-1은 마스터 R-9의 본 phase 운영화이다. 마스터 Risk Register의 다른 항목(R-1~R-16)은 본 phase 책임 범위 외이며, P1(PTY 코어) 봉인 시 또는 P3~P6에서 운영화된다.
+  </div>
+</section>
+
+<!-- ============================== 10. Exit Gate to P3 ============================== -->
+<section id="sec-exit">
+  <h2>10. Exit Gate to P3 (WebView)</h2>
+
+  <p>P3 진입 전 다음 조건이 모두 충족되어야 한다. 하나라도 미충족이면 P2를 봉인하지 않는다.</p>
+
+  <ul class="exit-criteria">
+    <li><input type="checkbox" disabled> <strong>코드 산출물 7개 존재</strong>: <code>src/model/Comment.ts</code>, <code>src/store/{PersistenceBackend,SidecarPersistence,WorkspaceStatePersistence,CommentStore,PersistenceBackendFactory,sidecarPath}.ts</code> 모두 git tracked.</li>
+    <li><input type="checkbox" disabled> <strong>테스트 4종 그룹 green</strong>: SidecarPersistence(4+ it), CommentStore(6+ it), WorkspaceStatePersistence(3+ it), PersistenceBackend contract(2 backend × 6 케이스).</li>
+    <li><input type="checkbox" disabled> <strong>전체 <code>npm test</code> exit code 0</strong> (P0/P1/P2 합산, 30+ it 통과).</li>
+    <li><input type="checkbox" disabled> <strong><code>npm run compile</code> exit code 0</strong> — TypeScript strict 통과.</li>
+    <li><input type="checkbox" disabled> <strong><code>npm run lint</code> exit code 0</strong> — eslint src + eslint test + cost-guard.</li>
+    <li><input type="checkbox" disabled> <strong>한자 정적 검증</strong>: <code>! grep -rP '[\x{4E00}-\x{9FFF}]' src/ test/</code> exit code 0.</li>
+    <li><input type="checkbox" disabled> <strong>cost-guard 회귀 방지</strong>: <code>grep -rE '"-p"|"--print"' src/</code> match 0건 (P1에서 도입된 검증이 P2 코드 추가 후에도 유효).</li>
+    <li><input type="checkbox" disabled> <strong>code-reviewer agent 별도 lane review 통과</strong> — 자기 self-approve 금지 규약 준수, CRITICAL/HIGH 0건.</li>
+    <li><input type="checkbox" disabled> <strong>P3 계약 문서화</strong>: <code>PersistenceBackend</code> 인터페이스, <code>Comment</code>/<code>CommentDraft</code>/<code>CommentPatch</code> 타입이 export되어 P3가 즉시 import 가능.</li>
+    <li><input type="checkbox" disabled> <strong>README 영속화 섹션 추가</strong>: backend 선택 방법, 사이드카 git ignore 권장 패턴, key naming(workspaceState) 명시 (P2 결정사항 외부 노출).</li>
+    <li><input type="checkbox" disabled> <strong>마스터 plan과 history 정합</strong>: 본 phase 진행 중 발견된 design drift는 본 detailed plan에 반영, 마스터 계획서와 모순 없음 (grep으로 시그니처 차이 확인).</li>
+  </ul>
+</section>
+
+<!-- ============================== 11. 부록 ============================== -->
+<section id="sec-appendix">
+  <h2>11. 부록</h2>
+
+  <section id="sec-appendix-a">
+    <h3>부록 A. 환경 변수 / settings</h3>
+
+    <table>
+      <thead>
+        <tr><th>키</th><th>타입</th><th>기본값</th><th>의미</th><th>도입 phase</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>mdReview.persistenceBackend</code></td>
+          <td><code>'sidecar' | 'workspaceState'</code></td>
+          <td><code>'sidecar'</code></td>
+          <td>코멘트 영속화 backend 선택. mutually exclusive.</td>
+          <td>P2</td>
+        </tr>
+        <tr>
+          <td><code>mdReview.sidecar.tmpSuffixLength</code> (선택, 향후)</td>
+          <td>number</td>
+          <td>6</td>
+          <td>atomic write의 임시 파일 random suffix 길이. 현재는 하드코딩.</td>
+          <td>P2 (현재 사용 안 함)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>본 phase에서는 settings 추가가 1개(<code>mdReview.persistenceBackend</code>)이다. <code>package.json</code>의 <code>contributes.configuration</code>에 본 phase Day 1.5 마지막 단계에서 추가한다.</p>
+  </section>
+
+  <section id="sec-appendix-b">
+    <h3>부록 B. 참고문헌</h3>
+    <ul>
+      <li>마스터 계획서: <code>docs/plans/vscode-md-review-plan.md</code> § P2 (line 262 ~ 279)</li>
+      <li>합의 이력: <code>docs/plans/vscode-md-review-history.md</code></li>
+      <li>명세서: <code>.omc/specs/deep-interview-vscode-md-review.md</code></li>
+      <li>VSCode Memento API: <a href="https://code.visualstudio.com/api/references/vscode-api#Memento">code.visualstudio.com/api/references/vscode-api#Memento</a></li>
+      <li>zod 공식: <a href="https://zod.dev">zod.dev</a> (v3.23.8)</li>
+      <li>POSIX rename atomicity: <code>man 2 rename</code> (Linux/macOS), 같은 파일 시스템 내 atomic 보장</li>
+      <li>Plan documents 규약: <code>~/.claude/rules/plan-documents.md</code></li>
+    </ul>
+  </section>
+</section>
+
+</main>
+</div>
+</body>
+</html>
