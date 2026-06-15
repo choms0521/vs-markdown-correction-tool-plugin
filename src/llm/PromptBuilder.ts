@@ -97,6 +97,56 @@ export class PromptBuilder {
     return { prompt, envelopeBegin, envelopeEnd, sentinel, uuid: id };
   }
 
+  // 작업 요청(채팅) 탭: 코멘트 묶음 대신 자유 텍스트 지시 1개로 파일을
+  // 직접 수정하게 한다. 현재 코멘트 목록도 참조용으로 동봉하여 "1번
+  // 적용해줘" 같은 번호 참조 지시가 동작하도록 한다.
+  buildDirectInstruction(
+    filePath: string,
+    instruction: string,
+    comments: readonly Comment[] = [],
+    uuid?: string,
+  ): BuiltPrompt {
+    const id = uuid ?? randomUUID();
+    const envelopeBegin = `<<<BEGIN-${id}>>>`;
+    const envelopeEnd = `<<<END-${id}>>>`;
+    const sentinel = `<<<DONE-${id}>>>`;
+    const joined = this.joinComments(comments);
+
+    const lines = [
+      envelopeBegin,
+      '다음 지시에 따라 아래 마크다운 파일을 도구로 직접 수정해 주십시오.',
+      `대상 파일: ${filePath}`,
+      '',
+      '--- 지시 ---',
+      instruction,
+      '',
+    ];
+    if (joined.length > 0) {
+      lines.push(
+        '--- 참고: 현재 리뷰 코멘트 (지시에서 번호로 참조될 수 있음) ---',
+        joined,
+        '',
+      );
+    }
+    lines.push(
+      '규칙:',
+      '- 지시와 관련된 부분만 수정하고, 그 외 내용은 보존하십시오.',
+      '- 대상 파일 외 다른 파일은 만들거나 수정하지 마십시오.',
+      '- 수정한 본문을 채팅 응답으로 출력하지 마십시오.',
+      '- 코멘트의 줄 번호(line)는 0부터 시작합니다.',
+      `- 모든 수정이 끝나면 마지막에 ${sentinelInstruction(sentinel)}`,
+      envelopeEnd,
+    );
+
+    return {
+      prompt: lines.join('\n'),
+      envelopeBegin,
+      envelopeEnd,
+      sentinel,
+      uuid: id,
+    };
+  }
+
   private joinComments(comments: readonly Comment[]): string {
     const lines: string[] = [];
     let index = 1;

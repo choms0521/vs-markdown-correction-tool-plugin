@@ -482,3 +482,186 @@ body[data-theme='dark'] {
   font-family: var(--vscode-editor-font-family, Menlo, monospace);
   color: var(--vscode-descriptionForeground);
 }
+
+/* 탭 (md수정 / 작업 요청) ------------------------------------------------- */
+#tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tab:hover {
+  color: var(--vscode-foreground);
+}
+
+.tab.active {
+  color: var(--vscode-foreground);
+  border-bottom-color: var(--vscode-focusBorder, #1f6feb);
+}
+
+.pane {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pane.active {
+  display: flex;
+}
+
+/* 작업 요청(채팅) 탭 ----------------------------------------------------- */
+#chat-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#chat-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#chat-input {
+  resize: vertical;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+}
+
+#chat-input:focus {
+  outline: 1px solid var(--vscode-focusBorder, #1f6feb);
+}
+
+#chat-send {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#chat-send:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+#chat-send:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.chat-turn {
+  border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.3));
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--vscode-editor-background);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-instruction {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-status {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.chat-status.pending {
+  font-style: italic;
+}
+
+.chat-status.applied {
+  color: var(--vscode-charts-blue, #1f6feb);
+}
+
+.chat-status.failed {
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.chat-diff {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-hunk {
+  border-left: 3px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.4));
+  padding-left: 8px;
+}
+
+.hunk-loc {
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, Menlo, monospace);
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 4px;
+}
+
+.hunk-before,
+.hunk-after {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--vscode-editor-font-family, Menlo, monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.hunk-before {
+  background: rgba(248, 81, 73, 0.12);
+}
+
+.hunk-after {
+  background: rgba(63, 185, 80, 0.14);
+  margin-top: 4px;
+}
+
+.chat-revert {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border, rgba(127, 127, 127, 0.3));
+  color: var(--vscode-foreground);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.chat-revert:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}

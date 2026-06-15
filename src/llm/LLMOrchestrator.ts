@@ -40,7 +40,7 @@ export interface OrchestratorTiming {
   submitKeyDelayMs: number;
 }
 
-const DEFAULT_TIMING: OrchestratorTiming = {
+export const DEFAULT_TIMING: OrchestratorTiming = {
   bootTimeoutMs: 10_000,
   bootSettleMs: 1_200,
   submitKeyDelayMs: 600,
@@ -69,6 +69,7 @@ export interface SubmitResult {
 export interface SubmitOptions {
   // diff: 응답을 fenced markdown으로 받아 hunk 승인 후 적용 (기존 흐름)
   // direct: CLI가 대상 파일을 도구로 직접 수정 (화면 긁기 손상 면역)
+  // 자유 텍스트 지시 기반 멀티턴 채팅은 ChatSession이 전담한다.
   mode: 'diff' | 'direct';
   filePath?: string;
 }

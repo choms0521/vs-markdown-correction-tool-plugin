@@ -4,6 +4,9 @@ import { MarkdownReviewEditor } from './editor/MarkdownReviewEditor';
 
 const WIN10_1809_BUILD = 17763;
 
+// deactivate에서 살아있는 채팅 PTY 세션을 일괄 정리하기 위한 핸들.
+let activeProvider: MarkdownReviewEditor | null = null;
+
 export function activate(context: vscode.ExtensionContext): void {
   const lifecycle = vscode.window.createOutputChannel('mdReview-lifecycle');
   const version =
@@ -28,6 +31,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   const provider = new MarkdownReviewEditor(context);
+  activeProvider = provider;
   context.subscriptions.push(
     lifecycle,
     vscode.window.registerCustomEditorProvider(
@@ -73,6 +77,11 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
-export function deactivate(): void {
-  // subscriptions이 자동 dispose. NodePtySession은 webviewPanel.onDidDispose에서 graceful kill.
+export function deactivate(): Promise<void> | void {
+  // 개별 탭은 onDidDispose에서 PTY를 정리하지만, 확장 비활성화 시 남아있는
+  // 살아있는 채팅 세션을 일괄 정리한다 (좀비 프로세스 방지 안전망).
+  // dispose는 멱등하므로 onDidDispose와 중복 발동해도 안전하다.
+  const pending = activeProvider?.disposeAllSessions();
+  activeProvider = null;
+  return pending;
 }

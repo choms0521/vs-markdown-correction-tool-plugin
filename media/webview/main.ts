@@ -1,6 +1,7 @@
 import { InlineOverlay } from './inline-overlay';
 import { CommentPanel } from './comment-panel';
-import type { CommentMirror } from './types';
+import { ChatPanel } from './chat-panel';
+import type { ChatResult, CommentMirror } from './types';
 
 declare function acquireVsCodeApi(): {
   postMessage(msg: unknown): void;
@@ -14,6 +15,13 @@ const overlayRoot = document.getElementById('overlay-root') as HTMLElement;
 const commentList = document.getElementById('comment-list') as HTMLElement;
 const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
+const chatLog = document.getElementById('chat-log') as HTMLElement;
+const chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
+const chatSend = document.getElementById('chat-send') as HTMLButtonElement;
+const tabReview = document.getElementById('tab-review') as HTMLButtonElement;
+const tabChat = document.getElementById('tab-chat') as HTMLButtonElement;
+const reviewPane = document.getElementById('review-pane') as HTMLElement;
+const chatPane = document.getElementById('chat-pane') as HTMLElement;
 
 type PreviewTheme = 'auto' | 'light' | 'dark';
 const THEME_CYCLE: PreviewTheme[] = ['auto', 'light', 'dark'];
@@ -61,6 +69,23 @@ const panel = new CommentPanel(commentList, submitBtn, {
   onItemClick: (id) => scrollToAnchor(id),
   onItemRemove: (id) => postWithBudget({ type: 'removeComment', id }),
 });
+
+const chatPanel = new ChatPanel(chatLog, chatInput, chatSend, {
+  onSend: (id, text) => postWithBudget({ type: 'chatRequest', id, text }),
+  onRevert: (id) => {
+    postWithBudget({ type: 'chatRevert', id });
+  },
+});
+
+function activateTab(tab: 'review' | 'chat'): void {
+  const isReview = tab === 'review';
+  tabReview.classList.toggle('active', isReview);
+  tabChat.classList.toggle('active', !isReview);
+  reviewPane.classList.toggle('active', isReview);
+  chatPane.classList.toggle('active', !isReview);
+}
+tabReview.addEventListener('click', () => activateTab('review'));
+tabChat.addEventListener('click', () => activateTab('chat'));
 
 let sourceLines: string[] = [];
 let comments: CommentMirror[] = [];
@@ -120,6 +145,16 @@ window.addEventListener('message', (e: MessageEvent) => {
       }
       panel.setSubmitBusy(false);
       break;
+    case 'chatResult':
+      chatPanel.applyResult(msg as unknown as ChatResult);
+      break;
+    case 'busyUpdate': {
+      // 두 탭이 같은 문서를 수정하므로 어느 작업 중이든 양쪽을 함께 잠근다.
+      const busy = (msg as unknown as { busy: boolean }).busy;
+      panel.setSubmitBusy(busy);
+      chatPanel.setBusy(busy);
+      break;
+    }
   }
 });
 

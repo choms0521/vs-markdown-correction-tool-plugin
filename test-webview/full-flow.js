@@ -32,11 +32,24 @@ function buildPage() {
 <div id="layout">
   <main id="doc-body"></main>
   <aside id="panel">
-    <header><strong>코멘트</strong>
+    <header>
+      <div id="tabs" role="tablist">
+        <button id="tab-review" class="tab active" type="button" role="tab">md수정</button>
+        <button id="tab-chat" class="tab" type="button" role="tab">작업 요청</button>
+      </div>
       <button id="theme-toggle" type="button">테마: 자동</button>
     </header>
-    <ul id="comment-list"></ul>
-    <button id="submit-btn" type="button">제출</button>
+    <section id="review-pane" class="pane active">
+      <ul id="comment-list"></ul>
+      <button id="submit-btn" type="button">제출</button>
+    </section>
+    <section id="chat-pane" class="pane">
+      <div id="chat-log"></div>
+      <div id="chat-input-row">
+        <textarea id="chat-input" rows="3"></textarea>
+        <button id="chat-send" type="button">보내기</button>
+      </div>
+    </section>
   </aside>
 </div>
 <div id="overlay-root"></div>
@@ -168,6 +181,52 @@ async function main() {
   await rightClickOnSelection(page, h2LastItem);
   const s5 = await addSuggestion(page);
   check('S5 빈 공간 시작 before = 2절', s5.message.before, section2.text);
+
+  // S6: 작업 요청 탭 전환 + 채팅 전송 + 결과 카드(요약/diff/되돌리기) 렌더
+  await page.locator('#tab-chat').click();
+  const chatPaneActive = await page.locator('#chat-pane.active').count();
+  check('S6 탭 전환 -> chat-pane active', chatPaneActive, 1);
+
+  const instruction = '첫 문단을 더 공손하게 고쳐줘';
+  await page.locator('#chat-input').fill(instruction);
+  await page.locator('#chat-send').click();
+  const chatReq = await page.evaluate(() =>
+    window.__posted.filter((m) => m.type === 'chatRequest').at(-1),
+  );
+  check('S6 chatRequest text 전달', chatReq.text, instruction);
+
+  // host가 결과를 회신했다고 가정하고 chatResult를 주입한다 (실제 LLM 불필요).
+  await page.evaluate((id) => {
+    window.postMessage(
+      {
+        type: 'chatResult',
+        id,
+        status: 'applied',
+        summary: '1개 구간 변경 (+1 / -1줄)',
+        hunks: [
+          {
+            kind: 'replace',
+            startLine: 0,
+            beforeText: '안녕',
+            afterText: '안녕하세요',
+          },
+        ],
+      },
+      '*',
+    );
+  }, chatReq.id);
+  await page.waitForSelector('.chat-turn .chat-revert');
+  const statusText = await page.locator('.chat-turn .chat-status').last().innerText();
+  check('S6 결과 상태 적용됨 표시', statusText.includes('적용됨'), true);
+  const hunkAfter = await page.locator('.chat-turn .hunk-after').last().innerText();
+  check('S6 diff after 렌더', hunkAfter.trim(), '안녕하세요');
+
+  // S7: 되돌리기 클릭 -> chatRevert 메시지 전송
+  await page.locator('.chat-turn .chat-revert').last().click();
+  const revertMsg = await page.evaluate(() =>
+    window.__posted.filter((m) => m.type === 'chatRevert').at(-1),
+  );
+  check('S7 chatRevert id 일치', revertMsg.id, chatReq.id);
 
   await browser.close();
   console.log(
