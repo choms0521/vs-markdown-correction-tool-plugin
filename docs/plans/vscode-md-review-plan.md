@@ -17,6 +17,7 @@ VSCode Extension(TypeScript) 형태로 동작하는 마크다운 인라인 리�
 총 8개 Phase로 분해하며 (P0, P0.5, P1..P6), 누적 소요는 약 12.5 ~ 15.0 작업일로 추정한다. v3의 surgical edits는 코드 수정 / P0.5 흡수 / P4 흡수 만으로 처리되어 **phase 일정 증가 없음**.
 
 ---
+
 ---
 
 ## 1. RALPLAN-DR 합의 요약
@@ -37,11 +38,11 @@ VSCode Extension(TypeScript) 형태로 동작하는 마크다운 인라인 리�
 
 ### 1.2 Decision Drivers (우선순위 Top 3)
 
-| 순위 | Driver | 가중치 | 비고 |
-|---|---|---|---|
-| 1 | 비용 회피 (per-call billing 금지) | High | 본 확장 존재 이유. print mode 사용 시 사용자가 구독료 외 추가 과금. args + command basename 이중 화이트리스트로 runtime 강제 (Edit-4, v3-Edit-3). |
-| 2 | VSCode 친화성 (Extension Host 단일 lifecycle) | High | tmux 같은 외부 환경 의존을 도입하면 Windows·기업 환경 배포가 무너진다. |
-| 3 | 설치 단순성 (native 빌드 함정 최소화) | Medium | node-pty native binary가 Electron 버전과 정합해야 함. vsce platform-specific vsix로 흡수. |
+| 순위 | Driver                                        | 가중치 | 비고                                                                                                                                              |
+| ---- | --------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | 비용 회피 (per-call billing 금지)             | High   | 본 확장 존재 이유. print mode 사용 시 사용자가 구독료 외 추가 과금. args + command basename 이중 화이트리스트로 runtime 강제 (Edit-4, v3-Edit-3). |
+| 2    | VSCode 친화성 (Extension Host 단일 lifecycle) | High   | tmux 같은 외부 환경 의존을 도입하면 Windows·기업 환경 배포가 무너진다.                                                                            |
+| 3    | 설치 단순성 (native 빌드 함정 최소화)         | Medium | node-pty native binary가 Electron 버전과 정합해야 함. vsce platform-specific vsix로 흡수.                                                         |
 
 ### 1.3 Viable Options (검토한 대안 ≥2개)
 
@@ -169,6 +170,7 @@ interactive 모드를 유지하면서 응답을 stream-json 포맷으로 받아 
 
   - `scripts/spike/probe-{claude,codex,gemini}.ts` — 각 provider 1회 round-trip 측정 스크립트. node-pty로 spawn → envelope 송신 → onData chunks를 stdout에 raw dump → 종료.
   - **`scripts/spike/network-probe.sh` (v3-Edit-2)** — provider별 baseline pcap + stream-json 활성 후 pcap 캡처 + 차이 비교 스크립트.
+
 - **측정 가능한 종료 조건**
   - `.omc/specs/provider-detector-matrix.md` 존재 + claude/codex/gemini 3 row 모두 채워짐
   - matrix 안 "(P0.5 실측 결과)" plaintext 잔존 0건: `grep -c "(P0.5 실측 결과)" .omc/specs/provider-detector-matrix.md` → 0
@@ -313,17 +315,18 @@ interactive 모드를 유지하면서 응답을 stream-json 포맷으로 받아 
       ```
     - uuid는 매 호출마다 `randomUUID()`로 재생성 → R-15 (sentinel 본문 우연 충돌) 1차 방어
   - `src/llm/ProviderConfig.ts` — settings.json에서 providers, defaultProvider, sentinelTimeoutMs(default 90_000), stripAnsi, persistenceBackend 로드 + zod validation. **args + command basename 이중 화이트리스트 검증 (Edit-4 + v3-Edit-3)**:
+
     ```typescript
     const ALLOWED_ARGS: Record<string, ReadonlySet<string>> = {
-      claude: new Set([]),  // interactive 모드 default args만 허용
-      codex:  new Set([]),
+      claude: new Set([]), // interactive 모드 default args만 허용
+      codex: new Set([]),
       gemini: new Set([]),
     };
 
     // v3-Edit-3: command basename 화이트리스트
     const ALLOWED_COMMAND_BASENAMES: Record<string, string> = {
       claude: 'claude',
-      codex:  'codex',
+      codex: 'codex',
       gemini: 'gemini',
     };
 
@@ -332,32 +335,38 @@ interactive 모드를 유지하면서 응답을 stream-json 포맷으로 받아 
       if (basename !== ALLOWED_COMMAND_BASENAMES[provider]) {
         throw new Error(
           `[mdReview] provider ${provider}의 command basename은 '${ALLOWED_COMMAND_BASENAMES[provider]}'만 허용됨. ` +
-          `현재: '${basename}'. wrapper script 사용은 비용 driver 위반 위험.`
+            `현재: '${basename}'. wrapper script 사용은 비용 driver 위반 위험.`,
         );
       }
       outputChannel.appendLine(`[cost-guard] resolved-command=${command} basename=${basename}`);
     }
 
-    function validateArgs(provider: 'claude'|'codex'|'gemini', args: string[]): void {
+    function validateArgs(provider: 'claude' | 'codex' | 'gemini', args: string[]): void {
       const allowed = ALLOWED_ARGS[provider];
-      const violating = args.filter(a => !allowed.has(a));
+      const violating = args.filter((a) => !allowed.has(a));
       if (violating.length > 0) {
-        throw new Error(`mdReview: provider "${provider}"에 허용되지 않은 args 발견: ${violating.join(', ')}. 종량 과금 위험으로 spawn을 거부합니다.`);
+        throw new Error(
+          `mdReview: provider "${provider}"에 허용되지 않은 args 발견: ${violating.join(', ')}. 종량 과금 위험으로 spawn을 거부합니다.`,
+        );
       }
     }
 
     // zod schema도 v3-Edit-3 갱신:
     const ProviderConfigSchema = z.object({
-      command: z.string().regex(
-        /^(?:.*\/)?(?:claude|codex|gemini)$/,
-        "허용된 binary basename만 가능 (claude/codex/gemini)"
-      ),
-      args: z.array(z.string()),  // 기존 화이트리스트 검증
+      command: z
+        .string()
+        .regex(
+          /^(?:.*\/)?(?:claude|codex|gemini)$/,
+          '허용된 binary basename만 가능 (claude/codex/gemini)',
+        ),
+      args: z.array(z.string()), // 기존 화이트리스트 검증
       cwd: z.string().optional(),
       env: z.record(z.string()).optional(),
     });
     ```
+
     - 검증 실패 시 OutputChannel에 `event=args-whitelist-violation provider=<name> rejected=<args>` 또는 `[cost-guard] basename-mismatch` 로깅.
+
   - `src/llm/LLMOrchestrator.ts` — `submit(document, comments)`:
     1. `uuid = randomUUID()`
     2. `{ prompt, envelopeBegin, envelopeEnd, sentinel } = PromptBuilder.build(document, comments, uuid)`
@@ -374,6 +383,7 @@ interactive 모드를 유지하면서 응답을 stream-json 포맷으로 받아 
     13. `finally: session.kill('SIGTERM', 2000)`
   - `src/llm/ResponseExtractor.ts` — Stage A 통과 후 buffer에서 fenced markdown block 우선 추출, 없으면 전체 trim 반환
   - `test/llm/*.test.ts` (PromptBuilder unit, mock pty session으로 LLMOrchestrator integration, args 화이트리스트 unit, **command basename 화이트리스트 unit (v3-Edit-3)**)
+
 - **측정 가능한 종료 조건**
   - `npm test -- --grep PromptBuilder` → all green
   - 빌드된 프롬프트 안에 envelope/sentinel 정확히 1회씩 포함: `expect(prompt.match(/<<<BEGIN-/g).length).toBe(1)`, `<<<END-/g` 1회, `<<<DONE-/g` 1회
@@ -466,17 +476,17 @@ interactive 모드를 유지하면서 응답을 stream-json 포맷으로 받아 
 
 ### 누적 소요 추정
 
-| Phase | 소요 (작업일) | v2 대비 |
-|---|---|---|
-| P0 스캐폴딩 | 1.0 | unchanged |
-| P0.5 Provider Spike (Edit-2 + v3-Edit-2 network probe 흡수) | 0.5 | unchanged |
-| P1 PTY 코어 (DELIBERATE, Edit-8 + v3-Edit-1 quiet period 코드 흡수) | 2.5 | unchanged |
-| P2 코멘트 모델 | 1.5 | unchanged |
-| P3 리뷰 WebView | 2.5 | unchanged |
-| P4 제출 흐름 (v3-Edit-3 command basename 화이트리스트 흡수) | 2.0 | unchanged |
-| P5 Diff 적용 | 1.5 | unchanged |
-| P6 패키징 (DELIBERATE) | 1.5 ~ 2.0 | unchanged |
-| **합계** | **12.5 ~ 13.5** (+ 버퍼 시 15.0) | **unchanged (phase 일정 증가 0d)** |
+| Phase                                                               | 소요 (작업일)                    | v2 대비                            |
+| ------------------------------------------------------------------- | -------------------------------- | ---------------------------------- |
+| P0 스캐폴딩                                                         | 1.0                              | unchanged                          |
+| P0.5 Provider Spike (Edit-2 + v3-Edit-2 network probe 흡수)         | 0.5                              | unchanged                          |
+| P1 PTY 코어 (DELIBERATE, Edit-8 + v3-Edit-1 quiet period 코드 흡수) | 2.5                              | unchanged                          |
+| P2 코멘트 모델                                                      | 1.5                              | unchanged                          |
+| P3 리뷰 WebView                                                     | 2.5                              | unchanged                          |
+| P4 제출 흐름 (v3-Edit-3 command basename 화이트리스트 흡수)         | 2.0                              | unchanged                          |
+| P5 Diff 적용                                                        | 1.5                              | unchanged                          |
+| P6 패키징 (DELIBERATE)                                              | 1.5 ~ 2.0                        | unchanged                          |
+| **합계**                                                            | **12.5 ~ 13.5** (+ 버퍼 시 15.0) | **unchanged (phase 일정 증가 0d)** |
 
 ---
 
@@ -500,12 +510,12 @@ VSCode Extension Host 안에서 `node-pty`로 claude / codex / gemini CLI를 int
 
 #### Alternatives Considered
 
-| 대안 | 기각 사유 |
-|---|---|
-| tmux pipe-pane + send-keys (Option B) | 외부 tmux 설치 요구로 설치 단순성 driver 위배. Windows 미지원. |
-| VSCode Terminal API pseudo-shell (Option C) | 출력 capture 경로가 안정적이지 않아 sentinel detection fragile. |
-| child_process + `-p` print mode (Option D) | 종량 과금 발생 → 본 확장 존재 이유와 정면 충돌. |
-| `--output-format stream-json` (Option E) | P0.5 spike에서 (a) interactive 안 활성 가능성, (b) tcpdump baseline 대비 outbound TLS connection 차이 0건 (v3-Edit-2) 실측 후 v4 또는 P1 코드에서 확정. v3 단계에서는 잠정 보류. |
+| 대안                                        | 기각 사유                                                                                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tmux pipe-pane + send-keys (Option B)       | 외부 tmux 설치 요구로 설치 단순성 driver 위배. Windows 미지원.                                                                                                                   |
+| VSCode Terminal API pseudo-shell (Option C) | 출력 capture 경로가 안정적이지 않아 sentinel detection fragile.                                                                                                                  |
+| child_process + `-p` print mode (Option D)  | 종량 과금 발생 → 본 확장 존재 이유와 정면 충돌.                                                                                                                                  |
+| `--output-format stream-json` (Option E)    | P0.5 spike에서 (a) interactive 안 활성 가능성, (b) tcpdump baseline 대비 outbound TLS connection 차이 0건 (v3-Edit-2) 실측 후 v4 또는 P1 코드에서 확정. v3 단계에서는 잠정 보류. |
 
 #### Why Chosen
 
@@ -544,45 +554,45 @@ VSCode Extension Host 안에서 `node-pty`로 claude / codex / gemini CLI를 int
 
 명세서 § Acceptance Criteria 13개 항목 + Edit-4로 추가된 AC-14를 검증 가능한 절차와 함께 재진술한다. v3에서는 AC-7과 AC-14를 갱신한다.
 
-| # | 기준 | 검증 절차 | Phase |
-|---|---|---|---|
-| AC-1 | `.md` 파일 열면 우측에 포맷된 리뷰 프리뷰 표시 | F5 디버그 → `.md` 파일 우클릭 → "Open with Markdown Review" → WebView 1개 표시 (수동, 스크린샷) | P3 |
-| AC-2 | 임의 텍스트 구간 선택 후 suggestion/question 코멘트 anchor 추가 가능 | WebView에서 텍스트 선택 → 컨텍스트 메뉴 → suggestion 추가 → DOM에 `data-comment-id` 1개 추가 (수동) | P3 |
-| AC-3 | 코멘트 사이드 panel 목록 표시, anchor 위치 이동/하이라이트 가능 | 사이드 panel 항목 클릭 → WebView가 해당 anchor에 스크롤 + highlight class 부착 (수동) | P3 |
-| AC-4 | 코멘트가 `.md.review.json` 사이드카 또는 workspaceState에 영속 저장 | 코멘트 추가 → WebView 재시작 → 동일 코멘트 복원 → `ls *.md.review.json` 검증 또는 `getState(...)` 결과 length > 0 | P2 |
-| AC-5 | "제출" 클릭 시 본문 + 코멘트 + envelope/sentinel 출력 지시 포함 단일 프롬프트 조립 | `npm test -- --grep PromptBuilder` 단위 테스트에서 prompt 안 `<<<BEGIN-`/`<<<END-`/`<<<DONE-` 각 정확히 1회, 본문·코멘트 모두 포함 assert | P4 |
-| AC-6 | default provider의 interactive CLI가 node-pty로 spawn되고 프롬프트는 `pty.write`로 주입 | 통합 테스트에서 mock `node-pty.spawn` spy 호출 + `pty.write` 호출 1회 + provider별 submit key 적용 assert | P1, P4 |
-| **AC-7 (갱신, Edit-10 + v3-Edit-1)** | `pty.onData`가 ANSI 정화 후 PROMPT_END 토큰 이후 buffer만 detector에 feed, sentinel 검출 시 200ms quiet period 통과 후 echo guard 통과 확인하고 완료 | `npm test -- --grep TerminationDetector` 단위 테스트: (a) ANSI 포함 chunk feed 후 buffer escape 0건, (b) **echo case 6종 단위 테스트 (Edit-10 + v3-Edit-1)** — 케이스 1~5(v2 기존) + **케이스 6 (v3 NEW): sentinel 검출 후 150ms 시점에 추가 chunk 1건 도착 → 응답 미완료로 판정되고 quiet timer 재설정 + 최종 sentinel만 매칭** — 모두 통과 | P1 |
-| AC-8 | sentinel이 발견되지 않은 상태에서 shell prompt 복귀 패턴(secondary detector)이 일치하면 응답 완료로 판정 (Stage A 통과 후에만) | TerminationDetector 단위 테스트: PROMPT_END 통과 + sentinel 없는 chunk + provider strategy의 shell prompt 정규식 일치 chunk → resolve | P1 |
-| AC-9 | 두 신호 모두 90s 안에 없으면 timeout 에러 안내 (v1의 30s → 90s, Edit-1) | TerminationDetector 단위 테스트: 어떤 신호도 없는 stream → 90s 경과 후 reject (Error 메시지 한국어) | P1 |
-| AC-10 | 응답에서 추출한 수정본은 `vscode.diff`로 원본과 나란히 표시 | F5 디버그 → submit → diff editor 열림 → 좌우 두 컬럼 표시 (수동, 스크린샷) | P5 |
-| AC-11 | diff editor에서 hunk별 승인/거부 후 `WorkspaceEdit`으로 원본 `.md`에 반영 | F5 디버그 → diff editor → quick-pick UI에서 hunk 2개 중 1개 accept → `.md` 본문 dirty + 해당 hunk만 반영 (수동, 텍스트 diff) | P5 |
-| AC-12 | `provider`, `defaultProvider`, `sentinelTimeoutMs`, `cwd`, `env`, `persistenceBackend` 등 settings.json으로 변경 가능 | settings.json 수정 → reload → 새 값으로 동작 (수동), `npm test -- --grep ProviderConfig`에서 zod validation 통과 | P4 |
-| AC-13 | 확장 비활성화 시 node-pty 세션 graceful kill (자식 leak 없음) | F5 디버그 → submit 진행 중 → reload window → `ps -ef \| grep claude` 0건 (수동, `lsof -p <vscode-pid> \| grep claude` 0건) | P1, P6 |
-| **AC-14 (갱신, Edit-4 + v3-Edit-3)** | settings에 `-p` 또는 화이트리스트 외 args 주입 시 spawn 거부 + **command basename이 `claude`/`codex`/`gemini` 외인 경우 spawn 거부 (v3-Edit-3)** + 사용자 경고 메시지 + OutputChannel 로깅 | (a) `npm test -- --grep validateArgs` 단위 테스트 4종 (claude/codex/gemini 화이트리스트 외 args 모두 throw), (b) **`npm test -- --grep validateCommand` 단위 테스트 4종 (v3-Edit-3): `'claude'` no-throw, `'/usr/local/bin/claude'` no-throw, `'claude-wrapper'` throws, `'/path/to/billable-claude'` throws**, (c) 수동: settings에 `claude.command = 'claude-wrapper'` 또는 `claude.command = '/path/to/billable-claude'` 주입 시 throw + 한국어 경고 + OutputChannel에 `[cost-guard]` 로그 1줄 (수동, screenshot), (d) settings에 `claude.args = ["-p"]` 입력 후 submit → 한국어 에러 toast + `event=args-whitelist-violation` 1건 로그 | P4 |
+| #                                    | 기준                                                                                                                                                                                       | 검증 절차                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Phase  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| AC-1                                 | `.md` 파일 열면 우측에 포맷된 리뷰 프리뷰 표시                                                                                                                                             | F5 디버그 → `.md` 파일 우클릭 → "Open with Markdown Review" → WebView 1개 표시 (수동, 스크린샷)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | P3     |
+| AC-2                                 | 임의 텍스트 구간 선택 후 suggestion/question 코멘트 anchor 추가 가능                                                                                                                       | WebView에서 텍스트 선택 → 컨텍스트 메뉴 → suggestion 추가 → DOM에 `data-comment-id` 1개 추가 (수동)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | P3     |
+| AC-3                                 | 코멘트 사이드 panel 목록 표시, anchor 위치 이동/하이라이트 가능                                                                                                                            | 사이드 panel 항목 클릭 → WebView가 해당 anchor에 스크롤 + highlight class 부착 (수동)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | P3     |
+| AC-4                                 | 코멘트가 `.md.review.json` 사이드카 또는 workspaceState에 영속 저장                                                                                                                        | 코멘트 추가 → WebView 재시작 → 동일 코멘트 복원 → `ls *.md.review.json` 검증 또는 `getState(...)` 결과 length > 0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | P2     |
+| AC-5                                 | "제출" 클릭 시 본문 + 코멘트 + envelope/sentinel 출력 지시 포함 단일 프롬프트 조립                                                                                                         | `npm test -- --grep PromptBuilder` 단위 테스트에서 prompt 안 `<<<BEGIN-`/`<<<END-`/`<<<DONE-` 각 정확히 1회, 본문·코멘트 모두 포함 assert                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | P4     |
+| AC-6                                 | default provider의 interactive CLI가 node-pty로 spawn되고 프롬프트는 `pty.write`로 주입                                                                                                    | 통합 테스트에서 mock `node-pty.spawn` spy 호출 + `pty.write` 호출 1회 + provider별 submit key 적용 assert                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | P1, P4 |
+| **AC-7 (갱신, Edit-10 + v3-Edit-1)** | `pty.onData`가 ANSI 정화 후 PROMPT_END 토큰 이후 buffer만 detector에 feed, sentinel 검출 시 200ms quiet period 통과 후 echo guard 통과 확인하고 완료                                       | `npm test -- --grep TerminationDetector` 단위 테스트: (a) ANSI 포함 chunk feed 후 buffer escape 0건, (b) **echo case 6종 단위 테스트 (Edit-10 + v3-Edit-1)** — 케이스 1~5(v2 기존) + **케이스 6 (v3 NEW): sentinel 검출 후 150ms 시점에 추가 chunk 1건 도착 → 응답 미완료로 판정되고 quiet timer 재설정 + 최종 sentinel만 매칭** — 모두 통과                                                                                                                                                                                                                                                                                               | P1     |
+| AC-8                                 | sentinel이 발견되지 않은 상태에서 shell prompt 복귀 패턴(secondary detector)이 일치하면 응답 완료로 판정 (Stage A 통과 후에만)                                                             | TerminationDetector 단위 테스트: PROMPT_END 통과 + sentinel 없는 chunk + provider strategy의 shell prompt 정규식 일치 chunk → resolve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | P1     |
+| AC-9                                 | 두 신호 모두 90s 안에 없으면 timeout 에러 안내 (v1의 30s → 90s, Edit-1)                                                                                                                    | TerminationDetector 단위 테스트: 어떤 신호도 없는 stream → 90s 경과 후 reject (Error 메시지 한국어)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | P1     |
+| AC-10                                | 응답에서 추출한 수정본은 `vscode.diff`로 원본과 나란히 표시                                                                                                                                | F5 디버그 → submit → diff editor 열림 → 좌우 두 컬럼 표시 (수동, 스크린샷)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | P5     |
+| AC-11                                | diff editor에서 hunk별 승인/거부 후 `WorkspaceEdit`으로 원본 `.md`에 반영                                                                                                                  | F5 디버그 → diff editor → quick-pick UI에서 hunk 2개 중 1개 accept → `.md` 본문 dirty + 해당 hunk만 반영 (수동, 텍스트 diff)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | P5     |
+| AC-12                                | `provider`, `defaultProvider`, `sentinelTimeoutMs`, `cwd`, `env`, `persistenceBackend` 등 settings.json으로 변경 가능                                                                      | settings.json 수정 → reload → 새 값으로 동작 (수동), `npm test -- --grep ProviderConfig`에서 zod validation 통과                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | P4     |
+| AC-13                                | 확장 비활성화 시 node-pty 세션 graceful kill (자식 leak 없음)                                                                                                                              | F5 디버그 → submit 진행 중 → reload window → `ps -ef \| grep claude` 0건 (수동, `lsof -p <vscode-pid> \| grep claude` 0건)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | P1, P6 |
+| **AC-14 (갱신, Edit-4 + v3-Edit-3)** | settings에 `-p` 또는 화이트리스트 외 args 주입 시 spawn 거부 + **command basename이 `claude`/`codex`/`gemini` 외인 경우 spawn 거부 (v3-Edit-3)** + 사용자 경고 메시지 + OutputChannel 로깅 | (a) `npm test -- --grep validateArgs` 단위 테스트 4종 (claude/codex/gemini 화이트리스트 외 args 모두 throw), (b) **`npm test -- --grep validateCommand` 단위 테스트 4종 (v3-Edit-3): `'claude'` no-throw, `'/usr/local/bin/claude'` no-throw, `'claude-wrapper'` throws, `'/path/to/billable-claude'` throws**, (c) 수동: settings에 `claude.command = 'claude-wrapper'` 또는 `claude.command = '/path/to/billable-claude'` 주입 시 throw + 한국어 경고 + OutputChannel에 `[cost-guard]` 로그 1줄 (수동, screenshot), (d) settings에 `claude.args = ["-p"]` 입력 후 submit → 한국어 에러 toast + `event=args-whitelist-violation` 1건 로그 | P4     |
 
 ---
 
 ## 5. Risk Register
 
-| # | 위험 | 가능성 | 영향 | 완화 | 책임 Phase |
-|---|---|---|---|---|---|
-| R-1 | `node-pty` native 빌드 실패 (Electron 버전 mismatch) | 중 | 높음 | vsce platform-specific vsix로 ABI 고정; `@vscode/test-electron` matrix CI로 사전 검증 | P0, P6 |
-| R-2 | LLM이 sentinel 출력 지시를 무시 | 낮음 | 중 | PromptBuilder가 출력 형식을 매우 명시적으로 지시; secondary detector(shell prompt) + tertiary detector(90s timeout)가 설계 단계부터 활성화되어 sentinel 누락 시에도 deterministic하게 종료 | P4 |
-| R-3 | shell prompt 정규식이 CLI UI 업데이트로 깨짐 | 중 | 낮음 | shell prompt 정규식을 settings로 노출; DetectorStrategy로 provider별 격리 (Edit-5); 확장 활성화 시 빈 명령으로 prompt 패턴 자동 학습 옵션 (F-1) | P1 |
-| R-4 | Interactive 응답에 thinking/메타텍스트가 마크다운과 섞여 반환 | 중 | 중 | ResponseExtractor가 fenced markdown block 우선 추출; PromptBuilder에서 "응답은 fenced markdown block 한 개로만" 명시 | P4 |
-| R-5 | WebView ↔ Extension Host 직렬화 부담 (대용량 `.md`) | 낮음 | 낮음 | 본문은 Extension Host가 직접 보유, WebView에는 anchor 정보만 전달 | P3 |
-| R-6 | node-pty 자식 프로세스 leak | 중 | 중 | extension `deactivate` hook에서 모든 session graceful kill(SIGTERM) + 2s 후 force kill(SIGKILL); 통합 테스트에서 `lsof` 0건 검증 | P1, P6 |
-| R-7 (갱신, Edit-4 + v3-Edit-3) | 사용자가 settings의 `args`에 `-p`/`--print` 또는 임의 args를 주입하여 과금 발생 + **wrapper script(command basename 우회)로 cost guard 회피** | 낮음 | 매우 높음 | **블랙리스트에서 이중 화이트리스트로 격상** — ProviderConfig 로드 시 args 배열을 `ALLOWED_ARGS[provider]` 집합과 비교, 외부 토큰 1개라도 발견 시 throw + 한국어 toast + OutputChannel 로깅. AC-14 단위 테스트로 회귀 방지. **추가로 command basename도 화이트리스트(`claude`/`codex`/`gemini`)로 검증하여 wrapper script 우회 차단 (v3-Edit-3)** | P4 |
-| R-8 | Windows ConPTY 미지원 환경 (Win10 1809 미만) | 낮음 | 중 | `package.json`에 minimum Windows 10 1809 명시; activate 시 OS 버전 체크 후 친절한 에러 표시 | P6 |
-| R-9 | 사이드카 `.md.review.json`을 사용자가 실수로 git에 commit | 중 | 낮음 | `.gitignore` 권장 패턴을 README에 명시; workspaceState 모드를 secondary persistence backend로 settings에서 명시 선택 가능 | P2 |
-| R-10 | hunk별 승인 UX가 VSCode 내장 diff editor native 기능과 매끄럽지 않음 | 중 | 중 | quick-pick 보조 UI를 일급 설계로 채택 (P5 산출물); 향후 inline accept button 검토 (F-2와 연계) | P5 |
-| R-11 (NEW, Edit-7) | PTY echo back으로 sentinel 즉시 false-resolve (silent bug 직결) | 높음 | 매우 높음 | Edit-1 envelope 도입. Stage A(PROMPT_END 검출) 통과 전 buffer는 응답으로 간주하지 않음. `<<<END-{uuid}>>>` 토큰을 만나야만 응답 영역 시작. echo case 6종 단위 테스트(AC-7, Edit-10 + v3-Edit-1)로 회귀 방지 | P1 |
-| R-12 (NEW, Edit-7) | claude REPL multiline submit semantics 미명세 — `\r\n` 줄바꿈인지 submit인지 불명 | 중 | 높음 | Edit-2 P0.5 spike에서 provider별 submit key를 실측 확정. DetectorStrategy의 `submitKey: '\r' | '\r\n' | 'bracketed-paste'` 필드로 코드화. bracketed paste가 안전한 default | P0.5, P1 |
-| R-13 (NEW, Edit-7) | Shell prompt 정규식이 intra-turn(응답 중간)에도 매칭되어 응답을 일찍 자름 | 중 | 중 | Edit-1 Stage A로 envelope 이전 영역 폐기. Stage B의 shell prompt regex는 envelope 이후 응답 영역에서만 평가. DetectorStrategy의 regex를 엄격하게(`^` anchor + ANSI sanitize 후) 작성 | P1 |
-| R-14 (NEW, Edit-7 + Edit-3) | cwd/env 정책 부재로 사용자 `~/.claude` ambient context 누락 → CLI가 인증 실패 또는 새 세션으로 인식하여 종량 모드로 떨어짐 | 중 | 매우 높음 | NodePtySession.spawn의 env default를 `process.env`로 명시하여 `~/.claude` 상속. cwd default는 workspace root. README에 macOS GUI launch zshrc 함정 명시. settings로 cwd/env override 가능 | P1, P6 |
-| R-15 (NEW, Edit-7) | Sentinel 토큰이 사용자 본문에 우연히 포함 — 사용자가 마크다운 본문에 `<<<DONE-` 같은 문자열을 직접 작성한 경우 응답을 일찍 자름 | 낮음 | 높음 | (a) sentinel uuid를 매 호출마다 `randomUUID()`로 재생성하여 충돌 확률 무시 가능 수준으로 낮춤. (b) Stage A 통과 후 응답 영역 안에서만 sentinel을 찾되 `lastIndexOf`로 마지막 occurrence만 사용 → 본문에 sentinel이 우연히 들어있더라도 LLM이 응답 끝에 출력한 sentinel이 우선 | P1 |
-| **R-16 (NEW, v3-Edit-1)** | Stream fragmentation으로 sentinel 검출 후 추가 chunk 누락 — LLM이 sentinel 출력 후에도 closing remark, tool use trailing text 등 추가 chunk를 보내면 즉시 resolve가 응답을 잘라 trailing 콘텐츠 손실 또는 sentinel 자체가 buffer에 partial로 잘려 false-resolve | 중 | 중 | 200ms quiet period + lastIndexOf 재평가 도입 (v3-Edit-1). sentinel 검출 시 즉시 resolve 대신 quiet timer 설정 후 200ms idle 시 final lastIndexOf로 resolve. 200ms 내 추가 chunk 도착하면 quiet timer 재설정 + buffer 끝쪽 sentinel 재평가. AC-7 케이스 6번째로 회귀 방지 | P1 |
+| #                              | 위험                                                                                                                                                                                                                                                            | 가능성 | 영향      | 완화                                                                                                                                                                                                                                                                                                                                             | 책임 Phase |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------ | -------- |
+| R-1                            | `node-pty` native 빌드 실패 (Electron 버전 mismatch)                                                                                                                                                                                                            | 중     | 높음      | vsce platform-specific vsix로 ABI 고정; `@vscode/test-electron` matrix CI로 사전 검증                                                                                                                                                                                                                                                            | P0, P6     |
+| R-2                            | LLM이 sentinel 출력 지시를 무시                                                                                                                                                                                                                                 | 낮음   | 중        | PromptBuilder가 출력 형식을 매우 명시적으로 지시; secondary detector(shell prompt) + tertiary detector(90s timeout)가 설계 단계부터 활성화되어 sentinel 누락 시에도 deterministic하게 종료                                                                                                                                                       | P4         |
+| R-3                            | shell prompt 정규식이 CLI UI 업데이트로 깨짐                                                                                                                                                                                                                    | 중     | 낮음      | shell prompt 정규식을 settings로 노출; DetectorStrategy로 provider별 격리 (Edit-5); 확장 활성화 시 빈 명령으로 prompt 패턴 자동 학습 옵션 (F-1)                                                                                                                                                                                                  | P1         |
+| R-4                            | Interactive 응답에 thinking/메타텍스트가 마크다운과 섞여 반환                                                                                                                                                                                                   | 중     | 중        | ResponseExtractor가 fenced markdown block 우선 추출; PromptBuilder에서 "응답은 fenced markdown block 한 개로만" 명시                                                                                                                                                                                                                             | P4         |
+| R-5                            | WebView ↔ Extension Host 직렬화 부담 (대용량 `.md`)                                                                                                                                                                                                             | 낮음   | 낮음      | 본문은 Extension Host가 직접 보유, WebView에는 anchor 정보만 전달                                                                                                                                                                                                                                                                                | P3         |
+| R-6                            | node-pty 자식 프로세스 leak                                                                                                                                                                                                                                     | 중     | 중        | extension `deactivate` hook에서 모든 session graceful kill(SIGTERM) + 2s 후 force kill(SIGKILL); 통합 테스트에서 `lsof` 0건 검증                                                                                                                                                                                                                 | P1, P6     |
+| R-7 (갱신, Edit-4 + v3-Edit-3) | 사용자가 settings의 `args`에 `-p`/`--print` 또는 임의 args를 주입하여 과금 발생 + **wrapper script(command basename 우회)로 cost guard 회피**                                                                                                                   | 낮음   | 매우 높음 | **블랙리스트에서 이중 화이트리스트로 격상** — ProviderConfig 로드 시 args 배열을 `ALLOWED_ARGS[provider]` 집합과 비교, 외부 토큰 1개라도 발견 시 throw + 한국어 toast + OutputChannel 로깅. AC-14 단위 테스트로 회귀 방지. **추가로 command basename도 화이트리스트(`claude`/`codex`/`gemini`)로 검증하여 wrapper script 우회 차단 (v3-Edit-3)** | P4         |
+| R-8                            | Windows ConPTY 미지원 환경 (Win10 1809 미만)                                                                                                                                                                                                                    | 낮음   | 중        | `package.json`에 minimum Windows 10 1809 명시; activate 시 OS 버전 체크 후 친절한 에러 표시                                                                                                                                                                                                                                                      | P6         |
+| R-9                            | 사이드카 `.md.review.json`을 사용자가 실수로 git에 commit                                                                                                                                                                                                       | 중     | 낮음      | `.gitignore` 권장 패턴을 README에 명시; workspaceState 모드를 secondary persistence backend로 settings에서 명시 선택 가능                                                                                                                                                                                                                        | P2         |
+| R-10                           | hunk별 승인 UX가 VSCode 내장 diff editor native 기능과 매끄럽지 않음                                                                                                                                                                                            | 중     | 중        | quick-pick 보조 UI를 일급 설계로 채택 (P5 산출물); 향후 inline accept button 검토 (F-2와 연계)                                                                                                                                                                                                                                                   | P5         |
+| R-11 (NEW, Edit-7)             | PTY echo back으로 sentinel 즉시 false-resolve (silent bug 직결)                                                                                                                                                                                                 | 높음   | 매우 높음 | Edit-1 envelope 도입. Stage A(PROMPT_END 검출) 통과 전 buffer는 응답으로 간주하지 않음. `<<<END-{uuid}>>>` 토큰을 만나야만 응답 영역 시작. echo case 6종 단위 테스트(AC-7, Edit-10 + v3-Edit-1)로 회귀 방지                                                                                                                                      | P1         |
+| R-12 (NEW, Edit-7)             | claude REPL multiline submit semantics 미명세 — `\r\n` 줄바꿈인지 submit인지 불명                                                                                                                                                                               | 중     | 높음      | Edit-2 P0.5 spike에서 provider별 submit key를 실측 확정. DetectorStrategy의 `submitKey: '\r'                                                                                                                                                                                                                                                     | '\r\n'     | 'bracketed-paste'` 필드로 코드화. bracketed paste가 안전한 default | P0.5, P1 |
+| R-13 (NEW, Edit-7)             | Shell prompt 정규식이 intra-turn(응답 중간)에도 매칭되어 응답을 일찍 자름                                                                                                                                                                                       | 중     | 중        | Edit-1 Stage A로 envelope 이전 영역 폐기. Stage B의 shell prompt regex는 envelope 이후 응답 영역에서만 평가. DetectorStrategy의 regex를 엄격하게(`^` anchor + ANSI sanitize 후) 작성                                                                                                                                                             | P1         |
+| R-14 (NEW, Edit-7 + Edit-3)    | cwd/env 정책 부재로 사용자 `~/.claude` ambient context 누락 → CLI가 인증 실패 또는 새 세션으로 인식하여 종량 모드로 떨어짐                                                                                                                                      | 중     | 매우 높음 | NodePtySession.spawn의 env default를 `process.env`로 명시하여 `~/.claude` 상속. cwd default는 workspace root. README에 macOS GUI launch zshrc 함정 명시. settings로 cwd/env override 가능                                                                                                                                                        | P1, P6     |
+| R-15 (NEW, Edit-7)             | Sentinel 토큰이 사용자 본문에 우연히 포함 — 사용자가 마크다운 본문에 `<<<DONE-` 같은 문자열을 직접 작성한 경우 응답을 일찍 자름                                                                                                                                 | 낮음   | 높음      | (a) sentinel uuid를 매 호출마다 `randomUUID()`로 재생성하여 충돌 확률 무시 가능 수준으로 낮춤. (b) Stage A 통과 후 응답 영역 안에서만 sentinel을 찾되 `lastIndexOf`로 마지막 occurrence만 사용 → 본문에 sentinel이 우연히 들어있더라도 LLM이 응답 끝에 출력한 sentinel이 우선                                                                    | P1         |
+| **R-16 (NEW, v3-Edit-1)**      | Stream fragmentation으로 sentinel 검출 후 추가 chunk 누락 — LLM이 sentinel 출력 후에도 closing remark, tool use trailing text 등 추가 chunk를 보내면 즉시 resolve가 응답을 잘라 trailing 콘텐츠 손실 또는 sentinel 자체가 buffer에 partial로 잘려 false-resolve | 중     | 중        | 200ms quiet period + lastIndexOf 재평가 도입 (v3-Edit-1). sentinel 검출 시 즉시 resolve 대신 quiet timer 설정 후 200ms idle 시 final lastIndexOf로 resolve. 200ms 내 추가 chunk 도착하면 quiet timer 재설정 + buffer 끝쪽 sentinel 재평가. AC-7 케이스 6번째로 회귀 방지                                                                         | P1         |
 
 ---
 
@@ -654,15 +664,15 @@ Files 평균 길이 200~400 lines 권장, 800 line 초과 금지 (~/.claude/rule
 ```json
 {
   "mdReview.providers": {
-    "claude":  {
+    "claude": {
       "command": "claude",
       "args": [],
       "cwd": null,
       "env": null,
       "envOverride": null
     },
-    "codex":   { "command": "codex",  "args": [], "cwd": null, "env": null },
-    "gemini":  { "command": "gemini", "args": [], "cwd": null, "env": null }
+    "codex": { "command": "codex", "args": [], "cwd": null, "env": null },
+    "gemini": { "command": "gemini", "args": [], "cwd": null, "env": null }
   },
   "mdReview.defaultProvider": "claude",
   "mdReview.sentinelTimeoutMs": 90000,
@@ -710,15 +720,15 @@ class TerminationDetector {
   private readonly quietPeriodMs = 200;
 
   constructor(
-    private envelopeEnd: string,        // <<<END-{uuid}>>>
-    private sentinel: string,            // <<<DONE-{uuid}>>>
-    private shellPromptRegex: RegExp,    // DetectorStrategy 주입
+    private envelopeEnd: string, // <<<END-{uuid}>>>
+    private sentinel: string, // <<<DONE-{uuid}>>>
+    private shellPromptRegex: RegExp, // DetectorStrategy 주입
     private resolve: (markdown: string) => void,
     private reject: (err: Error) => void,
   ) {
     this.hardTimeout = setTimeout(
       () => this.reject(new Error('LLM 응답 시간 초과 (90s)')),
-      90_000,  // v1의 30s에서 90s로 격상 (Edit-1)
+      90_000, // v1의 30s에서 90s로 격상 (Edit-1)
     );
   }
 
@@ -752,7 +762,7 @@ class TerminationDetector {
 
     // Step 3 (Stage B2): shell prompt secondary detector (응답 영역 안에서만)
     if (this.shellPromptRegex.test(this.buffer)) {
-      clearTimeout(this.quietTimer);  // v3-Edit-1: pending quiet timer 취소
+      clearTimeout(this.quietTimer); // v3-Edit-1: pending quiet timer 취소
       clearTimeout(this.hardTimeout);
       return this.resolve(this.buffer);
     }
