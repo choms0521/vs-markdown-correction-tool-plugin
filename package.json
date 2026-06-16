@@ -19,7 +19,8 @@
     "llm",
     "claude",
     "codex",
-    "gemini",
+    "antigravity",
+    "agy",
     "pty",
     "diff"
   ],
@@ -77,14 +78,14 @@
         "mdReview.providers": {
           "type": "object",
           "default": {},
-          "description": "Provider-specific command/args/cwd/env configuration. Keys are provider names (claude, codex, gemini)."
+          "description": "Provider-specific command/args/cwd/env configuration. Keys are provider names (claude, codex, antigravity)."
         },
         "mdReview.defaultProvider": {
           "type": "string",
           "enum": [
             "claude",
             "codex",
-            "gemini"
+            "antigravity"
           ],
           "default": "claude",
           "description": "Default LLM provider to use for review submissions."

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { DetectorFactory } from '../../src/pty/detector/DetectorFactory';
 import { ClaudeDetector } from '../../src/pty/detector/ClaudeDetector';
 import { CodexDetector } from '../../src/pty/detector/CodexDetector';
-import { GeminiDetector } from '../../src/pty/detector/GeminiDetector';
+import { AntigravityDetector } from '../../src/pty/detector/AntigravityDetector';
 
 describe('DetectorFactory', () => {
   it('returns ClaudeDetector for claude', () => {
@@ -13,7 +13,9 @@ describe('DetectorFactory', () => {
     expect(DetectorFactory.for('codex')).to.be.instanceOf(CodexDetector);
   });
 
-  it('returns GeminiDetector for gemini', () => {
-    expect(DetectorFactory.for('gemini')).to.be.instanceOf(GeminiDetector);
+  it('returns AntigravityDetector for antigravity', () => {
+    expect(DetectorFactory.for('antigravity')).to.be.instanceOf(
+      AntigravityDetector,
+    );
   });
 });

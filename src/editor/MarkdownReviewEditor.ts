@@ -10,6 +10,7 @@ import { ChatSession } from '../llm/ChatSession';
 import { NodePtySession } from '../pty/NodePtySession';
 import {
   ProviderNameSchema,
+  ALLOWED_COMMAND_BASENAMES,
   type ProviderName,
 } from '../llm/ProviderConfig';
 import {
@@ -524,7 +525,10 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
       Record<string, { command?: string; args?: string[] }>
     >('providers', {});
     const pcfg = providers[provider] ?? {};
-    const command = pcfg.command ?? provider;
+    // provider명과 실행 명령 basename이 다를 수 있다 (antigravity → agy).
+    // command 미설정 시 provider명을 그대로 쓰면 basename 검증에서 거부되므로,
+    // provider별 정규 basename으로 폴백한다.
+    const command = pcfg.command ?? ALLOWED_COMMAND_BASENAMES[provider];
     const args = pcfg.args ?? [];
     const sentinelTimeoutMs = cfg.get<number>('sentinelTimeoutMs', 180_000);
     return { provider, command, args, sentinelTimeoutMs };

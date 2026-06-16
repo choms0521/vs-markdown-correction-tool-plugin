@@ -3,6 +3,7 @@ import { PromptBuilder } from './PromptBuilder';
 import {
   validateCommand,
   validateArgs,
+  directPermissionArgs,
   type CostGuardOutput,
 } from './ProviderConfig';
 import {
@@ -74,12 +75,9 @@ export class ChatSession {
 
     const cfg = this.deps.readConfig();
     this.cfg = cfg;
-    // 채팅은 항상 direct 경로(파일 직접 수정)이므로 claude는 편집 권한
+    // 채팅은 항상 direct 경로(파일 직접 수정)이므로 provider별 편집 권한
     // 자동 승인 플래그를 붙인다 (화이트리스트 검증 대상).
-    const args =
-      cfg.provider === 'claude'
-        ? [...cfg.args, '--permission-mode', 'acceptEdits']
-        : cfg.args;
+    const args = [...cfg.args, ...directPermissionArgs(cfg.provider)];
     validateCommand(cfg.provider, cfg.command, this.deps.output);
     validateArgs(cfg.provider, args, this.deps.output);
     this.strategy = DetectorFactory.for(cfg.provider);

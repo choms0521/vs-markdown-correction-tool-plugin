@@ -4,6 +4,7 @@ import { ResponseExtractor } from './ResponseExtractor';
 import {
   validateCommand,
   validateArgs,
+  directPermissionArgs,
   type ProviderName,
   type CostGuardOutput,
 } from './ProviderConfig';
@@ -96,10 +97,9 @@ export class LLMOrchestrator {
     }
     // direct 모드에서 파일 편집 권한 프롬프트로 TUI가 멈추지 않도록
     // provider별 자동 승인 플래그를 추가한다 (화이트리스트 검증 대상).
-    const args =
-      direct && cfg.provider === 'claude'
-        ? [...cfg.args, '--permission-mode', 'acceptEdits']
-        : cfg.args;
+    const args = direct
+      ? [...cfg.args, ...directPermissionArgs(cfg.provider)]
+      : cfg.args;
 
     validateCommand(cfg.provider, cfg.command, this.deps.output);
     validateArgs(cfg.provider, args, this.deps.output);

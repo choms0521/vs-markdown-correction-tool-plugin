@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
-export const ProviderNameSchema = z.enum(['claude', 'codex', 'gemini']);
+export const ProviderNameSchema = z.enum(['claude', 'codex', 'antigravity']);
 export type ProviderName = z.infer<typeof ProviderNameSchema>;
 
 export const ProviderConfigSchema = z.object({
   command: z
     .string()
     .regex(
-      /^(?:.*\/)?(?:claude|codex|gemini)$/,
-      'command basename must be exactly one of claude/codex/gemini',
+      /^(?:.*\/)?(?:claude|codex|agy)$/,
+      'command basename must be exactly one of claude/codex/agy',
     ),
   args: z.array(z.string()).default([]),
   cwd: z.string().optional(),
@@ -23,7 +23,10 @@ export const ALLOWED_ARGS: Readonly<
   // TUI가 멈추지 않게 한다. print mode와 무관하며 과금 경로가 아니다.
   claude: new Set<string>(['--permission-mode', 'acceptEdits']),
   codex: new Set<string>(),
-  gemini: new Set<string>(),
+  // --dangerously-skip-permissions: agy(antigravity)의 direct 모드 권한
+  // 자동 승인. claude의 acceptEdits 대응물이며 print mode와 무관하다.
+  // 도구 전반을 승인하므로 프롬프트에서 "대상 파일만 수정"으로 범위를 묶는다.
+  antigravity: new Set<string>(['--dangerously-skip-permissions']),
 };
 
 export const ALLOWED_COMMAND_BASENAMES: Readonly<
@@ -31,7 +34,8 @@ export const ALLOWED_COMMAND_BASENAMES: Readonly<
 > = {
   claude: 'claude',
   codex: 'codex',
-  gemini: 'gemini',
+  // provider 식별자는 'antigravity'이나 실제 실행 명령(basename)은 'agy'다.
+  antigravity: 'agy',
 };
 
 export function commandBasename(command: string): string {
@@ -80,5 +84,21 @@ export function validateArgs(
       `[cost-guard] provider '${provider}'에 허용되지 않은 args 발견: ${violating.join(', ')}. ` +
         `종량 과금 위험으로 spawn을 거부합니다.`,
     );
+  }
+}
+
+// direct 모드(파일 직접 수정)에서 권한 프롬프트로 TUI가 멈추지 않도록
+// provider별 자동 승인 플래그를 돌려준다. ALLOWED_ARGS와 정합해야 하며,
+// LLMOrchestrator(diff/direct)와 ChatSession(항상 direct)이 공유한다.
+export function directPermissionArgs(
+  provider: ProviderName,
+): readonly string[] {
+  switch (provider) {
+    case 'claude':
+      return ['--permission-mode', 'acceptEdits'];
+    case 'antigravity':
+      return ['--dangerously-skip-permissions'];
+    case 'codex':
+      return [];
   }
 }
