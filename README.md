@@ -38,8 +38,9 @@ Download the `.vsix` matching your platform from the GitHub Releases page, then:
 code --install-extension mdreview-0.0.1-darwin-arm64.vsix
 ```
 
-Available targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`,
-`win32-x64`.
+Available targets: `darwin-arm64`, `linux-x64`, `linux-arm64`, `win32-x64`.
+(Intel macOS / `darwin-x64` is not built in CI — the macOS x64 runner is being
+retired; build it locally with `npm run package:darwin-x64` if needed.)
 
 ## Settings
 

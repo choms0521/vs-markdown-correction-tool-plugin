@@ -19,7 +19,7 @@ export const ChatHunkSchema = z.object({
 export type ChatHunk = z.infer<typeof ChatHunkSchema>;
 
 // applied: 파일이 실제로 바뀜 / noChange: 정상 완료지만 변경 없음 /
-// failed: 시간 초과 또는 오류. 빈 카드로 성공·실패가 구분되지 않는 문제를
+// failed: 시간 초과 또는 오류. 빈 카드로 성공/실패가 구분되지 않는 문제를
 // 막기 위해 상태를 명시적으로 구분한다.
 export const ChatStatusSchema = z.enum(['applied', 'noChange', 'failed']);
 export type ChatStatus = z.infer<typeof ChatStatusSchema>;
