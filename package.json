@@ -145,7 +145,7 @@
     "watch:webview": "esbuild media/webview/main.ts --bundle --format=iife --outfile=media/webview/dist/main.js --target=es2020 --platform=browser --sourcemap --watch",
     "test": "mocha",
     "lint": "eslint src --ext ts && eslint test --ext ts && npm run lint:cost-guard",
-    "lint:cost-guard": "! grep -rE '\"-p\"|\"--print\"' src/ 2>/dev/null",
+    "lint:cost-guard": "node scripts/cost-guard.js",
     "lint:hanja": "! perl -nle 'print \"$ARGV:$.: $_\" if /\\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md 2>/dev/null",
     "package": "vsce package",
     "package:darwin-arm64": "vsce package --target darwin-arm64",
