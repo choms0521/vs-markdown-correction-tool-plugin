@@ -47,7 +47,7 @@ Available targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`,
 | --- | ---- | ------- | ----------- |
 | `mdReview.defaultProvider` | enum (`claude` / `codex` / `gemini`) | `claude` | Provider used for review submissions. |
 | `mdReview.providers` | object | `{}` | Per-provider `command` / `args` / `cwd` / `env` overrides. Keys are provider names. |
-| `mdReview.sentinelTimeoutMs` | number | `180000` | Hard timeout (ms) before submission gives up. |
+| `mdReview.sentinelTimeoutMs` | number | `600000` | Hard timeout (ms) before submission gives up. |
 | `mdReview.responseQuietPeriodMs` | number | `200` | Quiet period (ms) after sentinel before finalizing response. |
 | `mdReview.persistenceBackend` | enum (`sidecar` / `workspaceState`) | `sidecar` | Where to store review comments. Mutually exclusive. |
 

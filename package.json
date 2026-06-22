@@ -91,7 +91,7 @@
         },
         "mdReview.sentinelTimeoutMs": {
           "type": "number",
-          "default": 180000,
+          "default": 600000,
           "description": "Timeout in milliseconds for sentinel detection before giving up."
         },
         "mdReview.responseQuietPeriodMs": {
