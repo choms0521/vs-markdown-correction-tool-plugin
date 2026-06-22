@@ -1,8 +1,8 @@
 import type { ChatHunk, ChatResult, ChatStatus, ChatTurnView } from './types';
 
 export interface ChatPanelHandlers {
-  // payload 예산(2KB)을 넘으면 false를 반환한다. false면 카드를 추가하지
-  // 않고 입력을 유지한다.
+  // payload 예산(2KB)을 넘으면 false를 반환한다. false면 실패 카드를 추가해
+  // 사용자에게 원인을 알리고 입력값은 유지한다.
   onSend: (id: string, text: string) => boolean;
   onRevert: (id: string) => void;
 }
@@ -15,9 +15,9 @@ const STATUS_LABEL: Record<ChatStatus, string> = {
 };
 
 // chatResult가 유실되어도 pending 카드가 영원히 멈추지 않게 하는 안전망.
-// host의 sentinelTimeoutMs(기본 180초)보다 길게 두어 정상 흐름에서는
-// 오발동하지 않는다 (코멘트 탭의 SUBMIT_SAFETY_RESTORE_MS와 대칭).
-const PENDING_TIMEOUT_MS = 240_000;
+// host의 sentinelTimeoutMs(기본 600초)보다 길게 두어, 정상적으로 진행 중인
+// 턴이 조기에 실패로 표시되지 않게 한다 (코멘트 탭의 SUBMIT_SAFETY_RESTORE_MS와 대칭).
+const PENDING_TIMEOUT_MS = 660_000;
 
 export class ChatPanel {
   private turns: ChatTurnView[] = [];

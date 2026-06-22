@@ -54,7 +54,8 @@ function postWithBudget(payload: unknown): boolean {
 
 // submitAck 유실(확장 호스트 오류 등) 시에도 버튼이 영원히 잠기지 않도록
 // 하는 안전망. 정상 흐름에서는 submitAck가 먼저 도착해 타이머를 해제한다.
-const SUBMIT_SAFETY_RESTORE_MS = 240_000;
+// host의 sentinelTimeoutMs(기본 600초)보다 길게 두어 조기 오발동을 피한다.
+const SUBMIT_SAFETY_RESTORE_MS = 660_000;
 let submitSafetyTimer: number | null = null;
 
 const panel = new CommentPanel(commentList, submitBtn, {
