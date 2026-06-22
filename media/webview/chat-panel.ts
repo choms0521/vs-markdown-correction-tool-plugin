@@ -10,6 +10,7 @@ export interface ChatPanelHandlers {
 const STATUS_LABEL: Record<ChatStatus, string> = {
   applied: '적용됨',
   noChange: '변경 없음',
+  reverted: '되돌림',
   failed: '실패',
 };
 

@@ -40,7 +40,9 @@ export const ALLOWED_COMMAND_BASENAMES: Readonly<
 
 export function commandBasename(command: string): string {
   const trimmed = command.trim();
-  const idx = trimmed.lastIndexOf('/');
+  // Windows 절대 경로(C:\...\agy)는 백슬래시를 구분자로 쓰므로 두 구분자
+  // 중 더 뒤쪽을 basename 경계로 삼는다. 둘 다 없으면 전체가 basename이다.
+  const idx = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
   return idx >= 0 ? trimmed.slice(idx + 1) : trimmed;
 }
 

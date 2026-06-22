@@ -101,7 +101,13 @@ export class ChatSession {
     // 첫 부팅 대기 (turn 1만). 첫 출력 chunk 이후 settle까지 기다린다.
     if (this.timing.bootTimeoutMs > 0) {
       await new Promise<void>((resolve) => {
-        const fallback = setTimeout(resolve, this.timing.bootTimeoutMs);
+        const fallback = setTimeout(() => {
+          // boot 타임아웃으로 진행하는 경로. onFirstChunk를 남겨두면 이후
+          // 실제 첫 응답 chunk가 도착했을 때 (이미 끝난 resolve를 향해)
+          // 불필요한 settle 타이머가 한 번 더 걸리므로 콜백을 정리한다.
+          this.onFirstChunk = null;
+          resolve();
+        }, this.timing.bootTimeoutMs);
         this.onFirstChunk = () => {
           clearTimeout(fallback);
           setTimeout(resolve, this.timing.bootSettleMs);

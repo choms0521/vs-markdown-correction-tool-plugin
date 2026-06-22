@@ -81,8 +81,15 @@ function activateTab(tab: 'review' | 'chat'): void {
   const isReview = tab === 'review';
   tabReview.classList.toggle('active', isReview);
   tabChat.classList.toggle('active', !isReview);
+  // role="tab"이므로 선택 상태를 ARIA로도 노출해야 스크린리더가 현재 탭을
+  // 인식한다. 비활성 pane은 hidden으로 명시적으로 감춰 키보드 포커스에서도
+  // 빠지게 한다 (CSS .pane.active와 이중으로 일관 유지).
+  tabReview.setAttribute('aria-selected', String(isReview));
+  tabChat.setAttribute('aria-selected', String(!isReview));
   reviewPane.classList.toggle('active', isReview);
   chatPane.classList.toggle('active', !isReview);
+  reviewPane.hidden = !isReview;
+  chatPane.hidden = isReview;
 }
 tabReview.addEventListener('click', () => activateTab('review'));
 tabChat.addEventListener('click', () => activateTab('chat'));

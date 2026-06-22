@@ -7,25 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Replaced the `gemini` provider with `antigravity` (Google's Antigravity CLI,
-  invoked as `agy`). The standalone `gemini` CLI stops serving consumer requests
-  on 2026-06-18, so it is no longer a viable backend. The provider identifier is
-  `antigravity` while the command basename is `agy`; the cost-guard command
-  regex (`claude|codex|agy`) and the command/args whitelists were updated to
-  match. `GeminiDetector` is replaced by `AntigravityDetector`, which disables
-  shell-prompt termination (never-match) like `ClaudeDetector` — `agy` is a
-  full-screen TUI whose input box renders during responses, so a `>` prompt
-  pattern would trigger false completion.
-- Centralized direct-mode permission flags into a single
-  `directPermissionArgs(provider)` helper shared by `LLMOrchestrator` and
-  `ChatSession` (claude: `--permission-mode acceptEdits`; antigravity:
-  `--dangerously-skip-permissions`; codex: none). antigravity uses
-  `--dangerously-skip-permissions` *without* `--sandbox`: sandbox mode confines
-  writes to a virtual filesystem (so the real `.md` is never edited) and is
-  bypassable when combined with auto-approval, making it incompatible with
-  direct file editing.
-
 ## [0.0.2] - 2026-06-15
 
 ### Added
@@ -113,6 +94,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selection offers a retry instead of dropping the response.
 
 ### Changed
+- Replaced the `gemini` provider with `antigravity` (Google's Antigravity CLI,
+  invoked as `agy`). The standalone `gemini` CLI stops serving consumer requests
+  on 2026-06-18, so it is no longer a viable backend. The provider identifier is
+  `antigravity` while the command basename is `agy`; the cost-guard command
+  regex (`claude|codex|agy`) and the command/args whitelists were updated to
+  match. `GeminiDetector` is replaced by `AntigravityDetector`, which disables
+  shell-prompt termination (never-match) like `ClaudeDetector` — `agy` is a
+  full-screen TUI whose input box renders during responses, so a `>` prompt
+  pattern would trigger false completion.
+- Centralized direct-mode permission flags into a single
+  `directPermissionArgs(provider)` helper shared by `LLMOrchestrator` and
+  `ChatSession` (claude: `--permission-mode acceptEdits`; antigravity:
+  `--dangerously-skip-permissions`; codex: none). antigravity uses
+  `--dangerously-skip-permissions` *without* `--sandbox`: sandbox mode confines
+  writes to a virtual filesystem (so the real `.md` is never edited) and is
+  bypassable when combined with auto-approval, making it incompatible with
+  direct file editing.
 - `mdReview.sentinelTimeoutMs` default raised from 90000 to 180000 (3 min)
   to accommodate long responses.
 

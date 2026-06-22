@@ -13,7 +13,7 @@ export interface CommentMirror {
 
 // 작업 요청(채팅) 탭 ----------------------------------------------------------
 
-export type ChatStatus = 'applied' | 'noChange' | 'failed';
+export type ChatStatus = 'applied' | 'noChange' | 'reverted' | 'failed';
 
 export interface ChatHunk {
   kind: 'insert' | 'delete' | 'replace';

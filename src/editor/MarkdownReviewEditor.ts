@@ -377,7 +377,7 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
     void bridge.post({
       type: 'chatResult',
       id,
-      status: 'noChange',
+      status: 'reverted',
       summary: '수정 전 상태로 되돌렸습니다.',
       hunks: [],
     });
@@ -466,16 +466,16 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
   <aside id="panel">
     <header>
       <div id="tabs" role="tablist">
-        <button id="tab-review" class="tab active" type="button" role="tab">md수정</button>
-        <button id="tab-chat" class="tab" type="button" role="tab">작업 요청</button>
+        <button id="tab-review" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="review-pane">md수정</button>
+        <button id="tab-chat" class="tab" type="button" role="tab" aria-selected="false" aria-controls="chat-pane">작업 요청</button>
       </div>
       <button id="theme-toggle" type="button" title="프리뷰 테마 전환">테마: 자동</button>
     </header>
-    <section id="review-pane" class="pane active">
+    <section id="review-pane" class="pane active" role="tabpanel" aria-labelledby="tab-review">
       <ul id="comment-list"></ul>
       <button id="submit-btn" type="button">제출</button>
     </section>
-    <section id="chat-pane" class="pane">
+    <section id="chat-pane" class="pane" role="tabpanel" aria-labelledby="tab-chat" hidden>
       <div id="chat-log"></div>
       <div id="chat-input-row">
         <textarea id="chat-input" rows="3" placeholder="예: 1번 적용해줘 / 전체 맞춤법을 고쳐줘"></textarea>
