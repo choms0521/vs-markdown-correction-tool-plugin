@@ -45,6 +45,13 @@ export class ChatPanel {
     this.sendBtn.disabled = busy;
     this.sendBtn.textContent = busy ? '처리 중...' : '보내기';
     this.input.disabled = busy;
+    // busy 동안 host는 chatRevert를 무시하므로, 이미 렌더된 되돌리기
+    // 버튼들도 함께 비활성화해 클릭이 무반응이 되는 혼란을 막는다.
+    this.logRoot
+      .querySelectorAll<HTMLButtonElement>('.chat-revert')
+      .forEach((b) => {
+        b.disabled = busy;
+      });
   }
 
   applyResult(result: ChatResult): void {
@@ -71,7 +78,9 @@ export class ChatPanel {
     }
     turn.pending = false;
     turn.status = result.status;
-    turn.summary = result.summary;
+    // host가 error만 채우고 summary를 비우는 경우(예: busy 거부)에도 사유가
+    // 보이도록 summary가 비면 error로 폴백한다.
+    turn.summary = result.summary || result.error || '';
     turn.hunks = result.hunks;
     turn.error = result.error;
     this.render();
@@ -168,6 +177,8 @@ export class ChatPanel {
       revert.type = 'button';
       revert.className = 'chat-revert';
       revert.textContent = '되돌리기';
+      // busy 중 재렌더되면 비활성 상태로 만든다 (setBusy와 정합).
+      revert.disabled = this.busy;
       revert.addEventListener('click', () => this.handlers.onRevert(t.id));
       card.appendChild(revert);
     }

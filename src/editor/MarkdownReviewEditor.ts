@@ -32,6 +32,10 @@ import {
   makeQuickPickBridge,
 } from '../diff/VSCodeBridges';
 
+// 채팅 턴별 되돌리기 snapshot 보관 상한. 큰 문서에서 턴이 무한 누적될 때
+// 메모리가 턴 수에 비례해 증가하는 것을 막는다 (오래된 턴부터 제거).
+const MAX_REVERT_SNAPSHOTS = 20;
+
 export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
   static readonly viewType = 'mdReview.editor';
 
@@ -170,7 +174,7 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
             type: 'chatResult',
             id: parsed.data.id,
             status: 'failed',
-            summary: '',
+            summary: '다른 작업이 진행 중입니다.',
             hunks: [],
             error: '다른 작업이 진행 중입니다.',
           });
@@ -222,13 +226,23 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
       session.updateBody(this.renderBody(document), document.getText());
     });
 
-    webviewPanel.onDidDispose(async () => {
+    webviewPanel.onDidDispose(() => {
       themeSub.dispose();
       changeSub.dispose();
       // 탭이 닫히는 모든 경로(×, 창 닫기, 그룹 닫기, Reload Window)에서
       // PTY 세션을 확실히 종료한다 (진행 중 턴은 abort로 끊김).
+      // VSCode는 dispose 핸들러의 반환 Promise를 기다리지 않으므로, dispose
+      // 실패가 unhandled rejection으로 남지 않게 명시적으로 삼켜 로그만 남긴다.
       this.sessions.delete(chatSession);
-      await Promise.all([session.dispose(), chatSession.dispose()]);
+      void Promise.all([session.dispose(), chatSession.dispose()]).catch(
+        (err) => {
+          this.output.appendLine(
+            `[mdReview] dispose 실패: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        },
+      );
     });
 
     await session.start(this.renderBody(document), document.getText());
@@ -322,6 +336,15 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
       if (changed) {
         status = 'applied';
         turnSnapshots.set(id, before);
+        // 가장 오래된 snapshot부터 제거해 보관량을 상한으로 묶는다
+        // (오래된 턴은 되돌리기 불가, 이미 알려진 제약과 일관).
+        while (turnSnapshots.size > MAX_REVERT_SNAPSHOTS) {
+          const oldest = turnSnapshots.keys().next().value;
+          if (oldest === undefined) {
+            break;
+          }
+          turnSnapshots.delete(oldest);
+        }
       } else if (submitError) {
         status = 'failed';
       } else {

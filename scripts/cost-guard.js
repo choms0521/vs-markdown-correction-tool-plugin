@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Cost guard (static): blocks committing literal "-p" / "--print" CLI flags in
-// src/, which would route a provider into metered, non-interactive mode.
+// Cost guard (static): blocks committing the literal -p / --print CLI flags in
+// src/ (matched in either single or double quotes), which would route a
+// provider into metered, non-interactive mode.
 //
 // This is a cross-platform replacement for `! grep -rE '"-p"|"--print"' src/`.
 // The bash form fails under cmd.exe (npm's default script shell on Windows CI)
@@ -11,7 +12,7 @@ const { readdirSync, readFileSync } = require('fs');
 const { join } = require('path');
 
 const ROOT = 'src';
-const FORBIDDEN = /"-p"|"--print"/;
+const FORBIDDEN = /['"]-p['"]|['"]--print['"]/;
 
 function listFiles(dir) {
   const entries = readdirSync(dir, { withFileTypes: true });
