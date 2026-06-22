@@ -102,7 +102,7 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
         const result = await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: 'mdReview: LLM 응답을 기다리는 중입니다... (최대 3분)',
+            title: 'mdReview: LLM 응답을 기다리는 중입니다... (최대 10분)',
           },
           () =>
             orchestrator.submit(snapshot, comments, {
@@ -287,7 +287,7 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: 'mdReview: 작업 요청을 처리하는 중입니다... (최대 3분)',
+            title: 'mdReview: 작업 요청을 처리하는 중입니다... (최대 10분)',
           },
           () =>
             chatSession.runTurn(
@@ -530,7 +530,7 @@ export class MarkdownReviewEditor implements vscode.CustomTextEditorProvider {
     // provider별 정규 basename으로 폴백한다.
     const command = pcfg.command ?? ALLOWED_COMMAND_BASENAMES[provider];
     const args = pcfg.args ?? [];
-    const sentinelTimeoutMs = cfg.get<number>('sentinelTimeoutMs', 180_000);
+    const sentinelTimeoutMs = cfg.get<number>('sentinelTimeoutMs', 600_000);
     return { provider, command, args, sentinelTimeoutMs };
   }
 
