@@ -13,3 +13,4 @@ media/webview/dist/
 # Local tool state
 .omc/
 .claude/
+.copilot-review-state.json
