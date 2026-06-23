@@ -1,9 +1,9 @@
 import { DetectorStrategy } from './DetectorStrategy';
 import { ClaudeDetector } from './ClaudeDetector';
 import { CodexDetector } from './CodexDetector';
-import { GeminiDetector } from './GeminiDetector';
+import { AntigravityDetector } from './AntigravityDetector';
 
-export type ProviderName = 'claude' | 'codex' | 'gemini';
+export type ProviderName = 'claude' | 'codex' | 'antigravity';
 
 export class DetectorFactory {
   static for(name: ProviderName): DetectorStrategy {
@@ -12,8 +12,8 @@ export class DetectorFactory {
         return new ClaudeDetector();
       case 'codex':
         return new CodexDetector();
-      case 'gemini':
-        return new GeminiDetector();
+      case 'antigravity':
+        return new AntigravityDetector();
       default: {
         const _exhaustive: never = name;
         throw new Error(`Unknown provider: ${String(_exhaustive)}`);

@@ -3,7 +3,7 @@
   "displayName": "Markdown Inline Review",
   "description": "VSCode extension for inline markdown review with interactive LLM CLI sessions",
   "publisher": "local-dev",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +19,8 @@
     "llm",
     "claude",
     "codex",
-    "gemini",
+    "antigravity",
+    "agy",
     "pty",
     "diff"
   ],
@@ -77,14 +78,14 @@
         "mdReview.providers": {
           "type": "object",
           "default": {},
-          "description": "Provider-specific command/args/cwd/env configuration. Keys are provider names (claude, codex, gemini)."
+          "description": "Provider-specific command/args/cwd/env configuration. Keys are provider names (claude, codex, antigravity)."
         },
         "mdReview.defaultProvider": {
           "type": "string",
           "enum": [
             "claude",
             "codex",
-            "gemini"
+            "antigravity"
           ],
           "default": "claude",
           "description": "Default LLM provider to use for review submissions."
@@ -144,7 +145,7 @@
     "watch:webview": "esbuild media/webview/main.ts --bundle --format=iife --outfile=media/webview/dist/main.js --target=es2020 --platform=browser --sourcemap --watch",
     "test": "mocha",
     "lint": "eslint src --ext ts && eslint test --ext ts && npm run lint:cost-guard",
-    "lint:cost-guard": "! grep -rE '\"-p\"|\"--print\"' src/ 2>/dev/null",
+    "lint:cost-guard": "node scripts/cost-guard.js",
     "lint:hanja": "! perl -nle 'print \"$ARGV:$.: $_\" if /\\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md 2>/dev/null",
     "package": "vsce package",
     "package:darwin-arm64": "vsce package --target darwin-arm64",

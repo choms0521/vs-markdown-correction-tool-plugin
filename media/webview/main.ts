@@ -1,6 +1,7 @@
 import { InlineOverlay } from './inline-overlay';
 import { CommentPanel } from './comment-panel';
-import type { CommentMirror } from './types';
+import { ChatPanel } from './chat-panel';
+import type { ChatResult, CommentMirror } from './types';
 
 declare function acquireVsCodeApi(): {
   postMessage(msg: unknown): void;
@@ -14,6 +15,13 @@ const overlayRoot = document.getElementById('overlay-root') as HTMLElement;
 const commentList = document.getElementById('comment-list') as HTMLElement;
 const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
+const chatLog = document.getElementById('chat-log') as HTMLElement;
+const chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
+const chatSend = document.getElementById('chat-send') as HTMLButtonElement;
+const tabReview = document.getElementById('tab-review') as HTMLButtonElement;
+const tabChat = document.getElementById('tab-chat') as HTMLButtonElement;
+const reviewPane = document.getElementById('review-pane') as HTMLElement;
+const chatPane = document.getElementById('chat-pane') as HTMLElement;
 
 type PreviewTheme = 'auto' | 'light' | 'dark';
 const THEME_CYCLE: PreviewTheme[] = ['auto', 'light', 'dark'];
@@ -46,7 +54,8 @@ function postWithBudget(payload: unknown): boolean {
 
 // submitAck 유실(확장 호스트 오류 등) 시에도 버튼이 영원히 잠기지 않도록
 // 하는 안전망. 정상 흐름에서는 submitAck가 먼저 도착해 타이머를 해제한다.
-const SUBMIT_SAFETY_RESTORE_MS = 240_000;
+// host의 sentinelTimeoutMs(기본 600초)보다 길게 두어 조기 오발동을 피한다.
+const SUBMIT_SAFETY_RESTORE_MS = 660_000;
 let submitSafetyTimer: number | null = null;
 
 const panel = new CommentPanel(commentList, submitBtn, {
@@ -61,6 +70,30 @@ const panel = new CommentPanel(commentList, submitBtn, {
   onItemClick: (id) => scrollToAnchor(id),
   onItemRemove: (id) => postWithBudget({ type: 'removeComment', id }),
 });
+
+const chatPanel = new ChatPanel(chatLog, chatInput, chatSend, {
+  onSend: (id, text) => postWithBudget({ type: 'chatRequest', id, text }),
+  onRevert: (id) => {
+    postWithBudget({ type: 'chatRevert', id });
+  },
+});
+
+function activateTab(tab: 'review' | 'chat'): void {
+  const isReview = tab === 'review';
+  tabReview.classList.toggle('active', isReview);
+  tabChat.classList.toggle('active', !isReview);
+  // role="tab"이므로 선택 상태를 ARIA로도 노출해야 스크린리더가 현재 탭을
+  // 인식한다. 비활성 pane은 hidden으로 명시적으로 감춰 키보드 포커스에서도
+  // 빠지게 한다 (CSS .pane.active와 이중으로 일관 유지).
+  tabReview.setAttribute('aria-selected', String(isReview));
+  tabChat.setAttribute('aria-selected', String(!isReview));
+  reviewPane.classList.toggle('active', isReview);
+  chatPane.classList.toggle('active', !isReview);
+  reviewPane.hidden = !isReview;
+  chatPane.hidden = isReview;
+}
+tabReview.addEventListener('click', () => activateTab('review'));
+tabChat.addEventListener('click', () => activateTab('chat'));
 
 let sourceLines: string[] = [];
 let comments: CommentMirror[] = [];
@@ -120,6 +153,16 @@ window.addEventListener('message', (e: MessageEvent) => {
       }
       panel.setSubmitBusy(false);
       break;
+    case 'chatResult':
+      chatPanel.applyResult(msg as unknown as ChatResult);
+      break;
+    case 'busyUpdate': {
+      // 두 탭이 같은 문서를 수정하므로 어느 작업 중이든 양쪽을 함께 잠근다.
+      const busy = (msg as unknown as { busy: boolean }).busy;
+      panel.setSubmitBusy(busy);
+      chatPanel.setBusy(busy);
+      break;
+    }
   }
 });
 

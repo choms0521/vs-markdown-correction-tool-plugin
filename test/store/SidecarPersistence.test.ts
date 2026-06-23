@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import * as fsSync from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 import {
   SidecarPersistence,
   computeSidecarPath,
@@ -36,9 +37,15 @@ describe('SidecarPersistence', () => {
     });
 
     it('converts file:// URI to absolute path before suffixing', () => {
-      expect(computeSidecarPath('file:///abs/path/doc.md')).to.equal(
-        '/abs/path/doc.md.review.json',
-      );
+      // Build the file URL from a real OS-absolute path so the test is
+      // cross-platform (Windows file URLs require a drive letter; a bare
+      // unix path like file:///abs/path is rejected by Windows node).
+      const abs =
+        process.platform === 'win32'
+          ? 'C:\\abs\\path\\doc.md'
+          : '/abs/path/doc.md';
+      const uri = pathToFileURL(abs).toString();
+      expect(computeSidecarPath(uri)).to.equal(`${abs}.review.json`);
     });
   });
 

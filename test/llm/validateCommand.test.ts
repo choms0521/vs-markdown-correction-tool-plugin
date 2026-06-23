@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   validateCommand,
+  ALLOWED_COMMAND_BASENAMES,
   type CostGuardOutput,
 } from '../../src/llm/ProviderConfig';
 
@@ -46,8 +47,19 @@ describe('validateCommand — 4 canonical cases', () => {
     expect(() => validateCommand('codex', 'claude')).to.throw();
   });
 
-  it('gemini provider — only gemini basename accepted', () => {
-    expect(() => validateCommand('gemini', 'gemini')).to.not.throw();
-    expect(() => validateCommand('gemini', 'codex')).to.throw();
+  it('antigravity provider — only agy basename accepted', () => {
+    expect(() => validateCommand('antigravity', 'agy')).to.not.throw();
+    expect(() => validateCommand('antigravity', 'codex')).to.throw();
+  });
+
+  it('기본 basename 폴백(ALLOWED_COMMAND_BASENAMES)은 모든 provider에서 통과', () => {
+    // readProviderConfig는 command 미설정 시 ALLOWED_COMMAND_BASENAMES[provider]로
+    // 폴백한다. 그 값이 항상 validateCommand를 통과해야 한다 — provider명과
+    // basename이 다른 antigravity→agy 분리에서의 회귀를 방지한다.
+    for (const p of ['claude', 'codex', 'antigravity'] as const) {
+      expect(() =>
+        validateCommand(p, ALLOWED_COMMAND_BASENAMES[p]),
+      ).to.not.throw();
+    }
   });
 });

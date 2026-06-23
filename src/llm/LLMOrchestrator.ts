@@ -4,6 +4,7 @@ import { ResponseExtractor } from './ResponseExtractor';
 import {
   validateCommand,
   validateArgs,
+  directPermissionArgs,
   type ProviderName,
   type CostGuardOutput,
 } from './ProviderConfig';
@@ -40,7 +41,7 @@ export interface OrchestratorTiming {
   submitKeyDelayMs: number;
 }
 
-const DEFAULT_TIMING: OrchestratorTiming = {
+export const DEFAULT_TIMING: OrchestratorTiming = {
   bootTimeoutMs: 10_000,
   bootSettleMs: 1_200,
   submitKeyDelayMs: 600,
@@ -69,6 +70,7 @@ export interface SubmitResult {
 export interface SubmitOptions {
   // diff: 응답을 fenced markdown으로 받아 hunk 승인 후 적용 (기존 흐름)
   // direct: CLI가 대상 파일을 도구로 직접 수정 (화면 긁기 손상 면역)
+  // 자유 텍스트 지시 기반 멀티턴 채팅은 ChatSession이 전담한다.
   mode: 'diff' | 'direct';
   filePath?: string;
 }
@@ -95,10 +97,9 @@ export class LLMOrchestrator {
     }
     // direct 모드에서 파일 편집 권한 프롬프트로 TUI가 멈추지 않도록
     // provider별 자동 승인 플래그를 추가한다 (화이트리스트 검증 대상).
-    const args =
-      direct && cfg.provider === 'claude'
-        ? [...cfg.args, '--permission-mode', 'acceptEdits']
-        : cfg.args;
+    const args = direct
+      ? [...cfg.args, ...directPermissionArgs(cfg.provider)]
+      : cfg.args;
 
     validateCommand(cfg.provider, cfg.command, this.deps.output);
     validateArgs(cfg.provider, args, this.deps.output);

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-06-15
+
 ### Added
 - Initial 0.0.1 release scaffolding (P0 through P6).
 - `mdReview.toggle` command, editor title icon, and keybinding to switch
@@ -39,6 +41,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mdReview` channel for diagnosis (e.g., sentinel timeouts).
 - GitHub-style typography for the rendered markdown body (heading hierarchy
   with borders, 860px measure, table stripes, blockquote/hr/link styling).
+- "작업 요청" (task request) tab in the review panel. The panel now has two
+  tabs: the existing comment review becomes the left "md수정" tab, and a new
+  right tab offers a multi-turn chat backed by a persistent CLI session. A
+  free-text instruction (e.g. "1번 적용해줘", then "방금 바꾼 거 되돌려줘")
+  drives the CLI to edit the file directly (direct mode) while the live
+  session retains conversation context across turns; the resulting change is
+  shown as a host-computed before/after diff (immune to TUI screen-scrape
+  corruption) with explicit applied / no-change / failed status and per-turn
+  undo. The current review comments are bundled into each instruction prompt
+  so number references work. Both tabs share one in-flight lock, so while any
+  LLM operation runs the submit/send buttons on both tabs are disabled.
+- Multi-turn chat session lifecycle (`ChatSession`). The interactive CLI
+  process is spawned lazily on the first send (opening a document costs no
+  process), reused across turns to preserve context, and torn down on a
+  single anchor: the tab closing (`onDidDispose`) or the extension
+  deactivating (provider-held registry as a backstop). Disposal aborts any
+  in-flight turn so killing the PTY can never leave an awaiter hanging, and is
+  idempotent. Each turn computes its diff from disk (the source of truth in
+  direct mode) to avoid cross-turn contamination from a lagging buffer reload.
 
 ### Fixed
 - Custom editor hang: `resolveCustomTextEditor` awaited webview message
@@ -73,6 +94,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selection offers a retry instead of dropping the response.
 
 ### Changed
+- Replaced the `gemini` provider with `antigravity` (Google's Antigravity CLI,
+  invoked as `agy`). The standalone `gemini` CLI stops serving consumer requests
+  on 2026-06-18, so it is no longer a viable backend. The provider identifier is
+  `antigravity` while the command basename is `agy`; the cost-guard command
+  regex (`claude|codex|agy`) and the command/args whitelists were updated to
+  match. `GeminiDetector` is replaced by `AntigravityDetector`, which disables
+  shell-prompt termination (never-match) like `ClaudeDetector` — `agy` is a
+  full-screen TUI whose input box renders during responses, so a `>` prompt
+  pattern would trigger false completion.
+- Centralized direct-mode permission flags into a single
+  `directPermissionArgs(provider)` helper shared by `LLMOrchestrator` and
+  `ChatSession` (claude: `--permission-mode acceptEdits`; antigravity:
+  `--dangerously-skip-permissions`; codex: none). antigravity uses
+  `--dangerously-skip-permissions` *without* `--sandbox`: sandbox mode confines
+  writes to a virtual filesystem (so the real `.md` is never edited) and is
+  bypassable when combined with auto-approval, making it incompatible with
+  direct file editing.
 - `mdReview.sentinelTimeoutMs` default raised from 90000 to 180000 (3 min)
   to accommodate long responses.
 
@@ -118,5 +156,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `linux-arm64`, and `win32-x64`, producing platform-specific `.vsix`
   artifacts.
 
-[Unreleased]: https://github.com/local/vscode-md-review/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/local/vscode-md-review/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/local/vscode-md-review/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/local/vscode-md-review/releases/tag/v0.0.1

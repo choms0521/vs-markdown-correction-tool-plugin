@@ -2,7 +2,7 @@
 
 A VSCode extension for inline review of `.md` files. Author `suggestion` and
 `question` comments directly on the rendered markdown preview, submit them to
-an interactive LLM CLI (`claude`, `codex`, or `gemini`), and apply the revised
+an interactive LLM CLI (`claude`, `codex`, or `antigravity`/`agy`), and apply the revised
 markdown hunk-by-hunk through the standard VSCode diff editor.
 
 ## Features
@@ -27,7 +27,7 @@ markdown hunk-by-hunk through the standard VSCode diff editor.
 - **Windows 10 1809 (build 17763) or newer** is required for ConPTY support.
   Older builds will show a warning and PTY-based submissions will fail. Use
   Windows Terminal or Windows 11 if possible.
-- A working `claude`, `codex`, or `gemini` CLI on `PATH`, **or** an explicit
+- A working `claude`, `codex`, or `antigravity` (`agy`) CLI on `PATH`, **or** an explicit
   absolute path configured in settings (see Troubleshooting).
 
 ## Installation
@@ -38,14 +38,15 @@ Download the `.vsix` matching your platform from the GitHub Releases page, then:
 code --install-extension mdreview-0.0.1-darwin-arm64.vsix
 ```
 
-Available targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`,
-`win32-x64`.
+Available targets: `darwin-arm64`, `linux-x64`, `linux-arm64`, `win32-x64`.
+(Intel macOS / `darwin-x64` is not built in CI — the macOS x64 runner is being
+retired; build it locally with `npm run package:darwin-x64` if needed.)
 
 ## Settings
 
 | Key | Type | Default | Description |
 | --- | ---- | ------- | ----------- |
-| `mdReview.defaultProvider` | enum (`claude` / `codex` / `gemini`) | `claude` | Provider used for review submissions. |
+| `mdReview.defaultProvider` | enum (`claude` / `codex` / `antigravity`) | `claude` | Provider used for review submissions. |
 | `mdReview.providers` | object | `{}` | Per-provider `command` / `args` / `cwd` / `env` overrides. Keys are provider names. |
 | `mdReview.sentinelTimeoutMs` | number | `600000` | Hard timeout (ms) before submission gives up. |
 | `mdReview.responseQuietPeriodMs` | number | `200` | Quiet period (ms) after sentinel before finalizing response. |
@@ -69,18 +70,19 @@ Available targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`,
 
 ## Cost Guard
 
-The CLIs supported by this extension (`claude`, `codex`, `gemini`) are billed
-per token when invoked non-interactively (`-p` / `--print`). mdReview enforces
+The CLIs supported by this extension (`claude`, `codex`, `antigravity`/`agy`) are
+billed per token when invoked non-interactively (`-p` / `--print`). mdReview enforces
 **interactive PTY mode only** through four defense layers:
 
 1. **Static lint** (`npm run lint:cost-guard`): grep blocks committing literal
    `-p` or `--print` tokens in `src/`.
-2. **Zod regex**: command basename must match `^(?:.*\/)?(?:claude|codex|gemini)$`.
+2. **Zod regex**: command basename must match `^(?:.*\/)?(?:claude|codex|agy)$`.
 3. **`validateCommand`**: rejects wrapper scripts at runtime.
 4. **`validateArgs`**: rejects any token not in the provider's `ALLOWED_ARGS`
-   set (currently empty for all providers — only the bare CLI invocation is
-   allowed). Violations are logged as `args-whitelist-violation` and throw
-   immediately.
+   set. Only direct-mode permission flags are whitelisted (claude:
+   `--permission-mode acceptEdits`; antigravity: `--dangerously-skip-permissions`);
+   `-p` / `--print` and every other token are rejected. Violations are logged as
+   `args-whitelist-violation` and throw immediately.
 
 The args whitelist is **enforced at runtime**. Editing settings cannot bypass
 it.

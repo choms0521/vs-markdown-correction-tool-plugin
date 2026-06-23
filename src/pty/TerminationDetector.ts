@@ -91,6 +91,13 @@ export class TerminationDetector {
     this.reject(err);
   }
 
+  // 외부에서 진행 중인 턴을 강제 종료한다 (예: 탭 닫힘으로 세션 dispose).
+  // PTY를 죽이면 완료 신호가 영영 오지 않아 awaiter가 무한 대기하므로,
+  // 반드시 이 abort로 약속을 reject해야 한다. settled면 무시(멱등).
+  abort(reason: string): void {
+    this.fail(new Error(reason));
+  }
+
   dispose(): void {
     if (this.quietTimer) clearTimeout(this.quietTimer);
     if (this.hardTimer) clearTimeout(this.hardTimer);

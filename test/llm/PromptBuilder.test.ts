@@ -131,3 +131,47 @@ describe('PromptBuilder.buildDirect', () => {
     expect(built.prompt.match(/<<<DONE-/g)).to.have.lengthOf(1);
   });
 });
+
+describe('PromptBuilder.buildDirectInstruction', () => {
+  it('자유 지시 텍스트와 대상 파일 경로를 포함한다', () => {
+    const b = new PromptBuilder();
+    const built = b.buildDirectInstruction(
+      '/tmp/doc.md',
+      '전체 맞춤법을 고쳐줘',
+      [],
+      'i-1',
+    );
+    expect(built.prompt).to.contain('/tmp/doc.md');
+    expect(built.prompt).to.contain('전체 맞춤법을 고쳐줘');
+    expect(built.prompt).to.contain('--- 지시 ---');
+    expect(built.prompt).to.not.contain('--- 본문 ---');
+  });
+
+  it('코멘트가 있으면 참고 섹션에 동봉하여 번호 참조를 가능하게 한다', () => {
+    const b = new PromptBuilder();
+    const built = b.buildDirectInstruction(
+      '/tmp/doc.md',
+      '1번 적용해줘',
+      [sampleSuggestion()],
+      'i-2',
+    );
+    expect(built.prompt).to.contain('현재 리뷰 코멘트');
+    expect(built.prompt).to.contain('[1] (suggestion)');
+    expect(built.prompt).to.contain('electron-manager');
+  });
+
+  it('코멘트가 없으면 참고 섹션을 생략한다', () => {
+    const b = new PromptBuilder();
+    const built = b.buildDirectInstruction('/tmp/doc.md', '제목을 바꿔줘', [], 'i-3');
+    expect(built.prompt).to.not.contain('현재 리뷰 코멘트');
+  });
+
+  it('envelope/sentinel 토큰을 정확히 1회씩 포함하고 sentinel literal은 분리되어 있다', () => {
+    const b = new PromptBuilder();
+    const built = b.buildDirectInstruction('/tmp/doc.md', '수정해줘', [], 'i-4');
+    expect(built.prompt.match(/<<<BEGIN-/g)).to.have.lengthOf(1);
+    expect(built.prompt.match(/<<<END-/g)).to.have.lengthOf(1);
+    expect(built.prompt.match(/<<<DONE-/g)).to.have.lengthOf(1);
+    expect(built.prompt).to.not.contain('<<<DONE-i-4>>>');
+  });
+});

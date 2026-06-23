@@ -16,7 +16,6 @@ jobs:
       matrix:
         include:
           - { os: macos-14,         target: darwin-arm64 }
-          - { os: macos-13,         target: darwin-x64 }
           - { os: ubuntu-22.04,     target: linux-x64 }
           - { os: ubuntu-22.04-arm, target: linux-arm64 }
           - { os: windows-2022,     target: win32-x64 }
@@ -46,7 +45,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if perl -nle 'exit 1 if /\p{Han}/' src/**/*.ts test/**/*.ts README.md CHANGELOG.md; then
+          # git ls-files (not a shell glob) keeps the file set identical across
+          # runners and bash versions; perl -CSD forces UTF-8 decoding so
+          # \p{Han} behaves the same everywhere; a hit prints file:line so the
+          # offending character is visible in the CI log.
+          if git ls-files -z 'src/**/*.ts' 'test/**/*.ts' README.md CHANGELOG.md \
+            | xargs -0 perl -CSD -nle 'if (/\p{Han}/){print "$ARGV:$.: $_"; $rc=1} END{exit $rc?1:0}'; then
             echo "hanja check passed (0 hits)"
           else
             echo "hanja regression detected" >&2
